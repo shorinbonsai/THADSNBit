@@ -78,7 +78,7 @@ class graph {
 
   //constructors and destructors
   graph();           //initialize an empty structure
-  graph(int max);    //initialize to maximum of M vertices
+  explicit graph(int max);    //initialize to maximum of M vertices
   ~graph();          //delete s structure
 
   //utilities

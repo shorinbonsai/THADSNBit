@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstdlib>
 
-
 #include "stat.h"
 
 //read in a file with N rows and M items per row

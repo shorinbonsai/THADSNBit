@@ -1,8 +1,8 @@
 #include <iostream>
-#include <fstream>
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
+#include <iomanip>
 
 using namespace std;
 
@@ -11,15 +11,15 @@ using namespace std;
 
 /*************************algorithm controls******************************/
 #define PL 16
-#define NSE 2
+#define NSE 50
 #define alpha 0.5
 #define mepl 3              //  Minimum epidemic length
 #define rse 5               //  Re-try short epidemics
-#define ftl 50              //  Final test length
-#define verbose 1
+//#define ftl 50              //  Final test length
+#define verbose true
 #define runs 30
-#define mevs 500000
-#define RI 5000
+#define mevs 40000
+#define RI ((long)mevs/100)
 #define NmC (long)9
 #define EDGB 2              //  Minimum degree for swap
 #define popsize 1000
@@ -30,14 +30,17 @@ using namespace std;
 #define MNM 3
 #define tsize 7
 #define omega 0.5
+#define edgeAdd 2
+#define triProb 0.8
 
 /**************************Variable dictionary************************/
 int pop[popsize][GL];           //  Population of command strings
 double fit[popsize];            //  Fitness array
 int dx[popsize];                //  Sorting index
-double PD[PL];               //  Profile dictionary
+double PD[PL + 1];               //  Profile dictionary
 double CmD[NmC];                //  Command densities
 int mode;                       //  Profile?
+bool ringG;
 
 /****************************Procedures********************************/
 void initalg(const char *pLoc);         //initialize the algorithm
@@ -47,7 +50,9 @@ void initpop();                        //initialize population
 void matingevent();                    //run a mating event
 void report(ostream &aus);             //make a statistical report
 void reportbest(ostream &aus, ostream &difc);
-void addContext(ostream &file);
+void createReadMe(ostream &aus);
+void cmdLineIntro(ostream &aus);
+void cmdLineRun(int run, ostream &aus);
 
 /****************************Main Routine*******************************/
 int main(int argc, char *argv[]) {
@@ -55,24 +60,20 @@ int main(int argc, char *argv[]) {
    * Output Location, Profile Location, Command Densities
    */
 
-  mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
+  mode = 1;   //  0 - Epidemic Length, 1 - Profile Matching
+  ringG = true;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
    * Mode 1 -> Profile Matching (w Densities)
    * Mode 2 -> Profile Matching (w Bitsprayers)
    */
 
-  int run, mev;         //loop index variales for replicate and mating events
-  fstream stat, best, dchar;   //statistics, best structures
+  fstream stat, best, dchar, readme;   //statistics, best structures
   char fn[60];          //file name construction buffer
   char *outLoc = argv[1];
   char *pLoc = argv[2];
-  initalg(pLoc);
-  sprintf(fn, "%sbest.lint", outLoc);
-  best.open(fn, ios::out);
-  sprintf(fn, "%sdifc.dat", outLoc);
-  dchar.open(fn, ios::out);
 
+  initalg(pLoc);
   if (mode < 2) { // Densities
     int offset = 3;
     for (int cmd = 0; cmd < NmC; cmd++) {
@@ -80,54 +81,77 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  for (run = 0; run < runs; run++) {
+  sprintf(fn, "%sbest.lint", outLoc);
+  best.open(fn, ios::out);
+  sprintf(fn, "%sdifc.dat", outLoc);
+  dchar.open(fn, ios::out);
+  sprintf(fn, "%sreadme.dat", outLoc);
+  readme.open(fn, ios::out);
+  createReadMe(readme);
+  readme.close();
+  if (verbose) {
+    cmdLineIntro(cout);
+  }
+
+  for (int run = 0; run < runs; run++) {
+    if (verbose) cmdLineRun(run, cout);
     sprintf(fn, "%srun%02d.dat", outLoc, run); // File name
     stat.open(fn, ios::out);
     initpop();
-    addContext(cout);
     report(stat); //report the statistics of the initial population
-    for (mev = 0; mev < mevs; mev++) {//do mating events
+    for (int mev = 0; mev < mevs; mev++) {//do mating events
       matingevent();  //run a mating event
       if ((mev + 1) % RI == 0) {//Time for a report?
-        if (verbose == 1) {
-          cout << run << " " << (mev + 1) / RI << " ";
+        if (verbose) {
+          cout << left << setw(5) << run;
+          cout << left << setw(4) << (mev + 1) / RI;
         }
         report(stat); //report statistics
       }
     }
     stat.close();
     reportbest(best, dchar);
+    cout << "Done run " << run << " of " << runs - 1 << endl;
   }
   best.close();
+  dchar.close();
   return (0);  //keep the system happy
 }
 
-void addContext(ostream &file) {
-  file << "START FILE INFO" << endl;
-  file << "Graph Evolution Tool." << endl;
+void createReadMe(ostream &aus) {
+  aus << "This file contains the info about the files in this folder." << endl;
+  aus << "Graph Evolution Tool." << endl;
+  aus << "Initial Graph: ";
+  if (ringG) {
+    aus << "Ring with m = 2" << endl;
+  } else {
+    aus << "Power Law Cluster Graph" << endl;
+  }
   switch (mode) {
     case 0:
-      file << "Fitness Function: Epidemic Length" << endl;
-      file << "Representation: THADS-N with Operation Densities" << endl;
-      file << "Densities: ";
-      for (int i = 0; i < NmC; i++) {
-        file << CmD[i] << " ";
+      aus << "Fitness Function: Epidemic Length" << endl;
+      aus << "Representation: THADS-N with Operation Densities" << endl;
+      aus << "Gene length: " << GL << endl;
+      aus << "Densities: ";
+      for (double i : CmD) {
+        aus << i << " ";
       }
-      file << endl;
+      aus << endl;
       break;
     case 1:
-      file << "Fitness Function: Profile Matching" << endl;
-      file << "Representation: THADS-N with Operation Densities" << endl;
-      file << "Densities: ";
-      for (int i = 0; i < NmC; i++) {
-        file << CmD[i] << " ";
+      aus << "Fitness Function: Profile Matching" << endl;
+      aus << "Representation: THADS-N with Operation Densities" << endl;
+      aus << "Gene length: " << GL << endl;
+      aus << "Densities: ";
+      for (double i : CmD) {
+        aus << i << " ";
       }
-      file << endl;
-      file << "Profile: ";
-      for (int i = 0; i < PL; i++) {
-        file << PD[i] << " ";
+      aus << endl;
+      aus << "Profile: ";
+      for (double i : PD) {
+        aus << i << " ";
       }
-      file << endl;
+      aus << endl;
       break;
 //    case 2:
 //      //TODO: complete
@@ -135,27 +159,105 @@ void addContext(ostream &file) {
     default:
       break;
   }
-  file << "END FILE INFO" << endl;
+  aus << endl;
+  aus << "The parameter settings are as follows: " << endl;
+  aus << "Number of sample epidemics: " << NSE << endl;
+  aus << "Alpha: " << alpha << endl;
+  aus << "Minimum epidemic length: " << mepl << endl;
+  aus << "Re-tries for short epidemics: " << rse << endl;
+  aus << "Runs: " << runs << endl;
+  aus << "Mating events: " << mevs << endl;
+  aus << "Minimum degree for swap: " << EDGB << endl;
+  aus << "Population size: " << popsize << endl;
+  aus << "Number of vertices: " << verts << endl;
+  aus << "Maximum number of mutations: " << MNM << endl;
+  aus << "Tournament size: " << tsize << endl;
+  aus << "Decay strength for diffusion characters: " << omega << endl;
+  if (!ringG) {
+    aus << "Edges added at each step: " << edgeAdd << endl;
+    aus << "Triangle creation probability: " << triProb << endl;
+  }
+  aus << endl;
+  aus << "The file descriptions are as follows: " << endl;
+  aus << "best.lint -> the best fitness and it's associated gene for each run";
+  aus << endl;
+  aus << "difc.dat -> the diffusion characters of the best graph for each run";
+  aus << endl;
+  aus << "run##.dat -> population statistics for each run" << endl;
+}
+
+void cmdLineIntro(ostream &aus) {
+  aus << "Graph Evolution Tool." << endl;
+  aus << "Initial Graph: ";
+  if (ringG) {
+    aus << "Ring with m = 2" << endl;
+  } else {
+    aus << "Power Law Cluster Graph" << endl;
+  }
+  switch (mode) {
+    case 0:
+      aus << "Fitness Function: Epidemic Length" << endl;
+      aus << "Representation: THADS-N with Operation Densities" << endl;
+      aus << "Densities: ";
+      for (double i : CmD) {
+        aus << i << " ";
+      }
+      aus << endl;
+      break;
+    case 1:
+      aus << "Fitness Function: Profile Matching" << endl;
+      aus << "Representation: THADS-N with Operation Densities" << endl;
+      aus << "Densities: ";
+      for (double i : CmD) {
+        aus << i << " ";
+      }
+      aus << endl;
+      aus << "Profile: ";
+      for (double i : PD) {
+        aus << i << " ";
+      }
+      aus << endl;
+      break;
+//    case 2:
+//      //TODO: complete
+//      break;
+    default:
+      break;
+  }
+  aus << "Check readme.dat for more information about parameters/output.";
+  aus << endl;
+}
+
+void cmdLineRun(int run, ostream &aus) {
+  aus << endl << "Beginning Run " << run << " of " << runs - 1 << endl;
+  aus << left << setw(5) << "Run";
+  aus << left << setw(4) << "RI";
+  aus << left << setw(10) << "Mean";
+  aus << left << setw(12) << "95% CI";
+  aus << left << setw(10) << "SD";
+  aus << left << setw(8) << "Best";
+  aus << endl;
+  aus << left << setw(5) << run;
+  aus << left << setw(4) << "0";
 }
 
 void initalg(const char *pLoc) {//initialize the algorithm
   fstream inp;    //input file
-  int i;          //loop index
   char buf[20];   //input buffer
 
   srand48(RNS);                 //read the random number seed
   if (mode == 1) {
     inp.open(pLoc, ios::in);      //open input file
-    for (i = 0; i < verts; i++) {
+    for (int i = 0; i < PL; i++) {
       PD[i] = 0;  //pre-fill missing values
     }
     PD[0] = 1;  //put in patient zero
-    for (i = 0; i < PL; i++) {      //loop over input values
+    for (int i = 0; i < PL; i++) {      //loop over input values
       inp.getline(buf, 19);  //read in the number
       PD[i + 1] = strtod(buf, nullptr);    //translate the number
     }
     cout << "Profile: "; //Prints out the profile being tested
-    for (i = 0; i <= PL; i++) {
+    for (int i = 0; i <= PL; i++) {
       cout << PD[i] << " ";
     }
     cout << endl;
@@ -179,14 +281,13 @@ int validloci() {//generate an acceptable large integer
 
 //This is expression of a large integer represenation
 void express(graph &G, const int *cmd) {//express a command string
-  int i;      //loop index
   int a, b, c;  //decoded values
   int cdv;    //command value
   int block;  //integer carving block
 
   // TODO: replace with plc
   G.RNGnm(verts, 2);  //  Initial graph
-  for (i = 0; i < GL; i++) {//loop over the commands (genetic loci)
+  for (int i = 0; i < GL; i++) {//loop over the commands (genetic loci)
     block = cmd[i];  //get integer
     cdv = (int) (block % NmC); //slice of the command
     block /= NmC;    //clear command information from block
@@ -256,24 +357,20 @@ double fitness(int *cmd) {//compute the epidemic length fitness
   double trials[NSE];  //stores squared error for each trial
   int en;              //epidemic number
   double delta;        //difference between profile and trial
-  int i;               //loop index
-  int epiDx[NSE];         //sorting index
   double accu = 0.0;         //accumulator
-
-  cnt = 0;                        //zero the try counter
   express(G, cmd);               //create the graph
 
   if (mode == 0) {
     for (en = 0; en < NSE; en++) {
       cnt = 0;
-      do{
+      do {
         G.SIR(0, max, len, ttl, alpha);
         cnt++;
       } while (len < mepl && cnt < rse);
       trials[en] = len;
     }
-    for (i = 0; i < NSE; i++) {//loop over trials
-      accu += trials[i];
+    for (double trial : trials) {//loop over trials
+      accu += trial;
     }
     accu = accu / NSE;
   } else if (mode == 1) {
@@ -284,34 +381,28 @@ double fitness(int *cmd) {//compute the epidemic length fitness
         cnt++;
       } while (len < mepl && cnt < rse);
       trials[en] = 0;  //zero the current squared error
-      if (len < PL) {
-        len = PL;  //find length of epi/prof (longer)
+      if (len < PL + 1) {
+        len = PL + 1;  //find length of epi/prof (longer)
       }
-      for (i = 0; i < len; i++) {//loop over time periods
+      for (int i = 0; i < len; i++) {//loop over time periods
         delta = prof[i] - PD[i];
         trials[en] += delta * delta;
       }
       trials[en] = sqrt(trials[en] / len); //convert to RMS error
     }
 
-    //TODO: fix fit calc
-
-    for (i = 0; i < NSE; i++)epiDx[i] = i;   //initialize the sorting index
-    tselect(trials, epiDx, NSE, NSE);  //sort small - big
-    for (i = 0; i < NSE; i++) {//loop over trials
-      //cout << i+1 << " " << epiDx[i] << " " << trials[epiDx[i]] << endl;
-      accu += trials[epiDx[i]] / (i + 1); //weighted, sorted error
+    for (double trial : trials) {
+      accu += trial;
     }
+    accu = accu / NSE;
   }
   return accu;  //return the fitness value
 }
 
 void initpop() {//initialize population
-  int i, j;  //loop index variables
-
-  for (i = 0; i < popsize; i++) {    //loop over the population
+  for (int i = 0; i < popsize; i++) {    //loop over the population
     /***INITIALIZATION CODE***/
-    for (j = 0; j < GL; j++) {
+    for (int j = 0; j < GL; j++) {
       pop[i][j] = validloci(); //fill in the loci
     }
     fit[i] = fitness(pop[i]);  //compute its fitness
@@ -320,11 +411,11 @@ void initpop() {//initialize population
 }
 
 void matingevent() {//run a mating event
-  int i, rp, sw;   //loop index, random position, swap variable
+  int rp, sw;   //loop index, random position, swap variable
   int cp1, cp2;   //crossover points
 
   //perform tournament selection, highest fitness first
-  if (mode == 0){
+  if (mode == 0) {
     tselect(fit, dx, tsize, popsize);
   } else {
     Tselect(fit, dx, tsize, popsize);
@@ -338,24 +429,28 @@ void matingevent() {//run a mating event
     cp1 = cp2;
     cp2 = sw;
   }
-  for (i = 0; i < cp1; i++) {
+  for (int i = 0; i < cp1; i++) {
     pop[dx[0]][i] = pop[dx[tsize - 2]][i];
     pop[dx[1]][i] = pop[dx[tsize - 1]][i];
   }
-  for (i = cp1; i < cp2; i++) {
+  for (int i = cp1; i < cp2; i++) {
     pop[dx[0]][i] = pop[dx[tsize - 1]][i];
     pop[dx[1]][i] = pop[dx[tsize - 2]][i];
   }
-  for (i = cp2; i < GL; i++) {
+  for (int i = cp2; i < GL; i++) {
     pop[dx[0]][i] = pop[dx[tsize - 2]][i];
     pop[dx[1]][i] = pop[dx[tsize - 1]][i];
   }
 
   //mutation
   rp = (int) lrand48() % MNM + 1;
-  for (i = 0; i < rp; i++)pop[dx[0]][lrand48() % GL] = validloci();
+  for (int i = 0; i < rp; i++) {
+    pop[dx[0]][lrand48() % GL] = validloci();
+  }
   rp = (int) lrand48() % MNM + 1;
-  for (i = 0; i < rp; i++)pop[dx[1]][lrand48() % GL] = validloci();
+  for (int i = 0; i < rp; i++) {
+    pop[dx[1]][lrand48() % GL] = validloci();
+  }
 
   //update fitness
   fit[dx[0]] = fitness(pop[dx[0]]);
@@ -374,40 +469,48 @@ void report(ostream &aus) {//make a statistical report
 
   //print report
   if (mode == 0) {
-    aus << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
-        << " " << D.Rmax() << endl;
-    if (verbose == 1) {
-      cout << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
-           << " " << D.Rmax() << endl;
+    aus << left << setw(10) << D.Rmu();
+    aus << left << setw(12) << D.RCI95();
+    aus << left << setw(10) << D.Rsg();
+    aus << left << setw(8) << D.Rmax() << endl;
+    if (verbose) {
+      cout << left << setw(10) << D.Rmu();
+      cout << left << setw(12) << D.RCI95();
+      cout << left << setw(10) << D.Rsg();
+      cout << left << setw(8) << D.Rmax() << endl;
     }
   } else if (mode == 1) {
-    aus << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
-        << " " << D.Rmin() << endl;
-    if (verbose == 1) {
-      cout << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
-           << " " << D.Rmin() << endl;
+    aus << left << setw(10) << D.Rmu();
+    aus << left << setw(12) << D.RCI95();
+    aus << left << setw(10) << D.Rsg();
+    aus << left << setw(8) << D.Rmin() << endl;
+    if (verbose) {
+      cout << left << setw(10) << D.Rmu();
+      cout << left << setw(12) << D.RCI95();
+      cout << left << setw(10) << D.Rsg();
+      cout << left << setw(8) << D.Rmin() << endl;
     }
   }
 }
 
 void reportbest(ostream &aus, ostream &difc) {//report the best graph
-  int i, j, b;       //loop indices and best pointer
+  int b;       //loop indices and best pointer
   graph G(verts);  //scratch graph
   double En;
   static double M[verts][verts];
   static double Ent[verts];
 //  fstream gout;    //graph output file
-  char fn[60];     //file name construction buffer
+//  char fn[60];     //file name construction buffer
 
   b = 0;
   if (mode == 0) {
-    for (i = 1; i < popsize; i++) {
+    for (int i = 1; i < popsize; i++) {
       if (fit[i] > fit[b]) {
         b = i; //find best fitness
       }
     }
   } else {
-    for (i = 1; i < popsize; i++) {
+    for (int i = 1; i < popsize; i++) {
       if (fit[i] < fit[b]) {
         b = i; //find best fitness
       }
@@ -420,7 +523,7 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
   // Write the gene
   aus << "Gene" << endl;
   aus << pop[b][0];
-  for (i = 1; i < GL; i++) {
+  for (int i = 1; i < GL; i++) {
     aus << " " << pop[b][i];
   }
   aus << endl;
@@ -431,20 +534,20 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
 //  sprintf(fn, "%sGraph%d.dat", outLoc, run);
 //  gout.open(fn, ios::out);
   G.write(aus);
-  for (i = 0; i < G.size(); i++) {
+  for (int i = 0; i < G.size(); i++) {
     G.DiffChar(i, omega, M[i]);
   }
 
-  for (i = 0; i < G.size(); i++) {//loop over vertices
+  for (int i = 0; i < G.size(); i++) {//loop over vertices
     En = 0.0;  //prepare En for normalizing
-    for (j = 0; j < G.size(); j++) {
+    for (int j = 0; j < G.size(); j++) {
       En += M[i][j];  //total the amount of gas at vertex i
     }
-    for (j = 0; j < G.size(); j++) {
+    for (int j = 0; j < G.size(); j++) {
       M[i][j] /= En;  //normalize so sum(gas)=1
     }
     En = 0.0;  //zero the entropy accumulator
-    for (j = 0; j < G.size(); j++) {//build up the individual entropy terms
+    for (int j = 0; j < G.size(); j++) {//build up the individual entropy terms
       if (M[i][j] > 0) {
         En += -M[i][j] * log(M[i][j]);  //this is entropy base E
       }
@@ -453,20 +556,21 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
   }
 
   //Now sort the entropy vector
+  bool more = false;  //no swaps
   do {//swap out-of-order entries
-    j = 0;  //no swaps
-    for (i = 0; i < G.size() - 1; i++) {
+    more = false;
+    for (int i = 0; i < G.size() - 1; i++) {
       if (Ent[i] < Ent[i + 1]) {
         En = Ent[i];
         Ent[i] = Ent[i + 1];
         Ent[i + 1] = En;  //swap
-        j = 1;  //set the flag that a swap happened
+        more = true;  //set the flag that a swap happened
       }
     }
-  } while (j == 1); //until in order
+  } while (more); //until in order
 
   difc << Ent[0];  //output first entropy value
-  for (i = 1; i < G.size(); i++) {
+  for (int i = 1; i < G.size(); i++) {
     difc << " " << Ent[i];  //output remaining values
   }
   difc << endl;  //end line
