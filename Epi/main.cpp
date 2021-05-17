@@ -23,20 +23,19 @@ using namespace std;
 #define NmC (long)9
 #define EDGB 2              //  Minimum degree for swap
 #define popsize 1000
-#define verts 128
+#define verts 160
 #define GL 256
 #define RNS 91207819
 #define MAXL (long)pow(verts, 3)  //  Size of integer
 #define MNM 3
 #define tsize 7
-#define omega 0.1
-#define pLen 16
+#define omega 0.5
 
 /**************************Variable dictionary************************/
 int pop[popsize][GL];           //  Population of command strings
 double fit[popsize];            //  Fitness array
 int dx[popsize];                //  Sorting index
-double PD[pLen];               //  Profile dictionary
+double PD[PL];               //  Profile dictionary
 double CmD[NmC];                //  Command densities
 int mode;                       //  Profile?
 
@@ -48,6 +47,7 @@ void initpop();                        //initialize population
 void matingevent();                    //run a mating event
 void report(ostream &aus);             //make a statistical report
 void reportbest(ostream &aus, ostream &difc);
+void addContext(ostream &file);
 
 /****************************Main Routine*******************************/
 int main(int argc, char *argv[]) {
@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
     sprintf(fn, "%srun%02d.dat", outLoc, run); // File name
     stat.open(fn, ios::out);
     initpop();
+    addContext(cout);
     report(stat); //report the statistics of the initial population
     for (mev = 0; mev < mevs; mev++) {//do mating events
       matingevent();  //run a mating event
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
   return (0);  //keep the system happy
 }
 
-void addContext(fstream file) {
+void addContext(ostream &file) {
   file << "START FILE INFO" << endl;
   file << "Graph Evolution Tool." << endl;
   switch (mode) {
@@ -123,7 +124,7 @@ void addContext(fstream file) {
       }
       file << endl;
       file << "Profile: ";
-      for (int i = 0; i < pLen; i++) {
+      for (int i = 0; i < PL; i++) {
         file << PD[i] << " ";
       }
       file << endl;
@@ -183,6 +184,7 @@ void express(graph &G, const int *cmd) {//express a command string
   int cdv;    //command value
   int block;  //integer carving block
 
+  // TODO: replace with plc
   G.RNGnm(verts, 2);  //  Initial graph
   for (i = 0; i < GL; i++) {//loop over the commands (genetic loci)
     block = cmd[i];  //get integer
@@ -263,7 +265,11 @@ double fitness(int *cmd) {//compute the epidemic length fitness
 
   if (mode == 0) {
     for (en = 0; en < NSE; en++) {
-      G.SIR(0, max, len, ttl, alpha);
+      cnt = 0;
+      do{
+        G.SIR(0, max, len, ttl, alpha);
+        cnt++;
+      } while (len < mepl && cnt < rse);
       trials[en] = len;
     }
     for (i = 0; i < NSE; i++) {//loop over trials
@@ -272,10 +278,14 @@ double fitness(int *cmd) {//compute the epidemic length fitness
     accu = accu / NSE;
   } else if (mode == 1) {
     for (en = 0; en < NSE; en++) {//loop over epidemics
-      G.SIRProfile(0, max, len, ttl, alpha, prof); //Acquire profile
+      cnt = 0;
+      do {
+        G.SIRProfile(0, max, len, ttl, alpha, prof);
+        cnt++;
+      } while (len < mepl && cnt < rse);
       trials[en] = 0;  //zero the current squared error
-      if (len < PL + 1) {
-        len = PL + 1;  //find length of epi/prof (longer)
+      if (len < PL) {
+        len = PL;  //find length of epi/prof (longer)
       }
       for (i = 0; i < len; i++) {//loop over time periods
         delta = prof[i] - PD[i];
@@ -284,6 +294,8 @@ double fitness(int *cmd) {//compute the epidemic length fitness
       trials[en] = sqrt(trials[en] / len); //convert to RMS error
     }
 
+    //TODO: fix fit calc
+
     for (i = 0; i < NSE; i++)epiDx[i] = i;   //initialize the sorting index
     tselect(trials, epiDx, NSE, NSE);  //sort small - big
     for (i = 0; i < NSE; i++) {//loop over trials
@@ -291,7 +303,7 @@ double fitness(int *cmd) {//compute the epidemic length fitness
       accu += trials[epiDx[i]] / (i + 1); //weighted, sorted error
     }
   }
-  return (accu);  //return the fitness value
+  return accu;  //return the fitness value
 }
 
 void initpop() {//initialize population
@@ -312,7 +324,11 @@ void matingevent() {//run a mating event
   int cp1, cp2;   //crossover points
 
   //perform tournament selection, highest fitness first
-  Tselect(fit, dx, tsize, popsize);
+  if (mode == 0){
+    tselect(fit, dx, tsize, popsize);
+  } else {
+    Tselect(fit, dx, tsize, popsize);
+  }
 
   //selection and crossover
   cp1 = (int) lrand48() % GL;
@@ -345,6 +361,7 @@ void matingevent() {//run a mating event
   fit[dx[0]] = fitness(pop[dx[0]]);
   fit[dx[1]] = fitness(pop[dx[1]]);
 
+  // Skeptical tournament selection
   if (mode == 0) {
     fit[dx[tsize - 1]] = fitness(pop[dx[tsize - 1]]);
     fit[dx[tsize - 2]] = fitness(pop[dx[tsize - 2]]);
@@ -359,14 +376,17 @@ void report(ostream &aus) {//make a statistical report
   if (mode == 0) {
     aus << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
         << " " << D.Rmax() << endl;
+    if (verbose == 1) {
+      cout << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
+           << " " << D.Rmax() << endl;
+    }
   } else if (mode == 1) {
     aus << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
         << " " << D.Rmin() << endl;
-  }
-
-  if (verbose == 1) {
-    cout << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
-         << " " << D.Rmin() << endl;
+    if (verbose == 1) {
+      cout << D.Rmu() << " " << D.RCI95() << " " << D.Rsg()
+           << " " << D.Rmin() << endl;
+    }
   }
 }
 
@@ -382,13 +402,13 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
   b = 0;
   if (mode == 0) {
     for (i = 1; i < popsize; i++) {
-      if (fit[i] < fit[b]) {
+      if (fit[i] > fit[b]) {
         b = i; //find best fitness
       }
     }
   } else {
     for (i = 1; i < popsize; i++) {
-      if (fit[i] > fit[b]) {
+      if (fit[i] < fit[b]) {
         b = i; //find best fitness
       }
     }
