@@ -947,7 +947,6 @@ void graph::PCG(int n, int m, double prob) {
     for (j = 0; j < temp.size(); j++)
       p.push_back(temp.memz(j)); //add new vertices to prob vector
   }
-
 }
 
 void graph::ER(int n, double p) {//Erdo-Renyi graph with n vertices; prob p

@@ -30,8 +30,8 @@ using namespace std;
 #define MNM 3
 #define tsize 7
 #define omega 0.5
-#define edgeAdd 2
-#define triProb 0.8
+#define edgeAdd 1
+#define triProb 0.5
 
 /**************************Variable dictionary************************/
 int pop[popsize][GL];           //  Population of command strings
@@ -41,6 +41,7 @@ double PD[PL + 1];               //  Profile dictionary
 double CmD[NmC];                //  Command densities
 int mode;                       //  Profile?
 bool ringG;
+graph iG;
 
 /****************************Procedures********************************/
 void initalg(const char *pLoc);         //initialize the algorithm
@@ -61,14 +62,14 @@ int main(int argc, char *argv[]) {
    */
 
   mode = 1;   //  0 - Epidemic Length, 1 - Profile Matching
-  ringG = true;
+  ringG = false;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
    * Mode 1 -> Profile Matching (w Densities)
    * Mode 2 -> Profile Matching (w Bitsprayers)
    */
 
-  fstream stat, best, dchar, readme;   //statistics, best structures
+  fstream stat, best, dchar, readme, iGOut;   //statistics, best structures
   char fn[60];          //file name construction buffer
   char *outLoc = argv[1];
   char *pLoc = argv[2];
@@ -89,6 +90,12 @@ int main(int argc, char *argv[]) {
   readme.open(fn, ios::out);
   createReadMe(readme);
   readme.close();
+  if (!ringG) {
+    sprintf(fn, "%sinitGraph.dat", outLoc);
+    iGOut.open(fn, ios::out);
+    iG.write(iGOut);
+    iGOut.close();
+  }
   if (verbose) {
     cmdLineIntro(cout);
   }
@@ -184,6 +191,9 @@ void createReadMe(ostream &aus) {
   aus << "difc.dat -> the diffusion characters of the best graph for each run";
   aus << endl;
   aus << "run##.dat -> population statistics for each run" << endl;
+  if (!ringG) {
+    aus << "initGraph.dat -> the initial power law clustering graph" << endl;
+  }
 }
 
 void cmdLineIntro(ostream &aus) {
@@ -246,6 +256,10 @@ void initalg(const char *pLoc) {//initialize the algorithm
   char buf[20];   //input buffer
 
   srand48(RNS);                 //read the random number seed
+  if (!ringG) {
+    iG.create(verts);
+    iG.PCG(verts, edgeAdd, triProb);
+  }
   if (mode == 1) {
     inp.open(pLoc, ios::in);      //open input file
     for (int i = 0; i < PL; i++) {
@@ -267,6 +281,7 @@ void initalg(const char *pLoc) {//initialize the algorithm
 
 //This routine generates valid loci for the expression routine
 int validloci() {//generate an acceptable large integer
+  // TODO: Insert SDA
   int cmd;       //command type generated
   double dart;   //Random command
 
@@ -285,8 +300,12 @@ void express(graph &G, const int *cmd) {//express a command string
   int cdv;    //command value
   int block;  //integer carving block
 
-  // TODO: replace with plc
-  G.RNGnm(verts, 2);  //  Initial graph
+  if (ringG) {
+    G.RNGnm(verts, 2);  //  Initial graph
+  } else {
+    G.copy(iG);
+  }
+
   for (int i = 0; i < GL; i++) {//loop over the commands (genetic loci)
     block = cmd[i];  //get integer
     cdv = (int) (block % NmC); //slice of the command
@@ -499,7 +518,7 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
   double En;
   static double M[verts][verts];
   static double Ent[verts];
-//  fstream gout;    //graph output file
+//  fstream initGOut;    //graph output file
 //  char fn[60];     //file name construction buffer
 
   b = 0;
