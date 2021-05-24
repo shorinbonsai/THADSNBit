@@ -124,7 +124,8 @@ void bitspray::next(int *Q, int &H, int &T, int qz) {//update the output queue
   td = Q[H++];
   if (H == qz)H = 0;  //move the head forward
   for (int i = 0; i < resp[cs][0]; i++) {//put response into the output queue
-    Q[T++] = resp[cs][i + 1];  //transfer character
+    int d = resp[cs][i + 1];
+    Q[T++] = d;  //transfer character
     if (T == qz)T = 0; //move the tail forward
   }
   cs = trans[cs][td];  //update state

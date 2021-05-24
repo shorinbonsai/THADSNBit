@@ -208,7 +208,7 @@ void dset::add(double v) {//Add one number
 
 }
 
-void dset::add(double *v, int k) {//Add k numbers
+void dset::add(const double v[], int k) {//Add k numbers
 
   int i;
 
