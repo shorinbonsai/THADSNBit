@@ -3,6 +3,9 @@
 #include <cstdio>
 #include <cmath>
 #include <iomanip>
+#include <string>
+#include <cstring>
+#include <filesystem>
 
 using namespace std;
 
@@ -20,23 +23,23 @@ using namespace std;
 #define verbose true
 #define runs 30
 #define mevs 40000
-#define RI 100
-#define RE ((long)mevs/RI)
+#define RIs 100
+#define RE ((long)mevs/RIs)
 #define NmC (long)9
 #define EDGB 2              //  Minimum degree for swap
-#define popsize 10
+#define popsize 100
 #define verts 160
 #define GL 256
 #define RNS 91207819
 #define MAXL (long)pow(verts, 3)  //  Size of integer
-#define MNM 2
+#define MNM 4
 #define tsize 5
 
 #define omega 0.5
 #define edgeAdd 1
 #define triProb 0.5
 
-#define states 8
+#define states 12
 #define Qz 100000
 int Q[Qz];
 
@@ -76,7 +79,7 @@ void getGene(int idx, double *probs);
 /****************************Main Routine*******************************/
 int main(int argc, char *argv[]) {
   /**
-   * Output Location, Profile Location, Command Densities
+   * Output Root, Profile Location, Profile Number
    */
 
   mode = 2;   //  0 - Epidemic Length, 1 - Profile Matching
@@ -89,8 +92,13 @@ int main(int argc, char *argv[]) {
 
   fstream stat, best, dchar, readme, iGOut;   //statistics, best structures
   char fn[60];          //file name construction buffer
-  char *outLoc = argv[1];
+  char *outLoc = new char[45];
+  char *outRoot = argv[1];
   char *pLoc = argv[2];
+  int pNum = stoi(argv[3]);
+  sprintf(outLoc, "%sOutput - P%d w %dS, %02dP, %dM/",
+          outRoot, pNum, states, popsize, MNM);
+  std::filesystem::create_directory(outLoc);
 
   initalg(pLoc);
   if (mode < 2) { // Densities
