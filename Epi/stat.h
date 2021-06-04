@@ -54,7 +54,7 @@ class dset {//data set manipulation class
 
   //input methods
   void add(double v);
-  void add(double *v, int k);
+  void add(const double *v, int k);
   void add(int *v, int k);
 
   //use methods

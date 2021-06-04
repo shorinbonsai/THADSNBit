@@ -3,11 +3,15 @@
 #include <cstdio>
 #include <cmath>
 #include <iomanip>
+#include <string>
+#include <cstring>
+#include <filesystem>
 
 using namespace std;
 
 #include "setu.h"
 #include "stat.h"
+#include "../BitSprayer/bitspray.h"
 
 /*************************algorithm controls******************************/
 #define PL 16
@@ -19,22 +23,33 @@ using namespace std;
 #define verbose true
 #define runs 30
 #define mevs 40000
-#define RI ((long)mevs/100)
+#define RIs 100
+#define RE ((long)mevs/RIs)
 #define NmC (long)9
 #define EDGB 2              //  Minimum degree for swap
-#define popsize 1000
+#define popsize 100
 #define verts 160
 #define GL 256
 #define RNS 91207819
 #define MAXL (long)pow(verts, 3)  //  Size of integer
-#define MNM 3
-#define tsize 7
+#define MNM 4
+#define tsize 5
+
 #define omega 0.5
 #define edgeAdd 1
 #define triProb 0.5
 
+#define states 12
+#define Qz 100000
+int Q[Qz];
+
+#define ent_thres 1.0
+bool dead[popsize];
+double max_fit = verts;
+
 /**************************Variable dictionary************************/
 int pop[popsize][GL];           //  Population of command strings
+bitspray *bPop[popsize];
 double fit[popsize];            //  Fitness array
 int dx[popsize];                //  Sorting index
 double PD[PL + 1];               //  Profile dictionary
@@ -46,6 +61,7 @@ graph iG;
 /****************************Procedures********************************/
 void initalg(const char *pLoc);         //initialize the algorithm
 int validloci();                       //generate an acceptable large integer
+int validloci(int &psn);
 void express(graph &G, const int *cmd);       //express a command string
 void initpop();                        //initialize population
 void matingevent();                    //run a mating event
@@ -54,14 +70,19 @@ void reportbest(ostream &aus, ostream &difc);
 void createReadMe(ostream &aus);
 void cmdLineIntro(ostream &aus);
 void cmdLineRun(int run, ostream &aus);
+double fitness(int *cmd);
+double fitness(int idx, bitspray &A);
+void developQ(bitspray &A);
+bool getnum(int &val, int bits, int &psn);
+void getGene(int idx, double *probs);
 
 /****************************Main Routine*******************************/
 int main(int argc, char *argv[]) {
   /**
-   * Output Location, Profile Location, Command Densities
+   * Output Root, Profile Location, Profile Number
    */
 
-  mode = 1;   //  0 - Epidemic Length, 1 - Profile Matching
+  mode = 2;   //  0 - Epidemic Length, 1 - Profile Matching
   ringG = false;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
@@ -71,8 +92,13 @@ int main(int argc, char *argv[]) {
 
   fstream stat, best, dchar, readme, iGOut;   //statistics, best structures
   char fn[60];          //file name construction buffer
-  char *outLoc = argv[1];
+  char *outLoc = new char[45];
+  char *outRoot = argv[1];
   char *pLoc = argv[2];
+  int pNum = stoi(argv[3]);
+  sprintf(outLoc, "%sOutput - P%d w %dS, %02dP, %dM/",
+          outRoot, pNum, states, popsize, MNM);
+  std::filesystem::create_directory(outLoc);
 
   initalg(pLoc);
   if (mode < 2) { // Densities
@@ -100,18 +126,21 @@ int main(int argc, char *argv[]) {
     cmdLineIntro(cout);
   }
 
+  if (!verbose) {
+    cout << "Started" << endl;
+  }
   for (int run = 0; run < runs; run++) {
-    if (verbose) cmdLineRun(run, cout);
     sprintf(fn, "%srun%02d.dat", outLoc, run); // File name
     stat.open(fn, ios::out);
+    if (verbose) cmdLineRun(run, cout);
     initpop();
     report(stat); //report the statistics of the initial population
     for (int mev = 0; mev < mevs; mev++) {//do mating events
       matingevent();  //run a mating event
-      if ((mev + 1) % RI == 0) {//Time for a report?
+      if ((mev + 1) % RE == 0) {//Time for a report?
         if (verbose) {
           cout << left << setw(5) << run;
-          cout << left << setw(4) << (mev + 1) / RI;
+          cout << left << setw(4) << (mev + 1) / RE;
         }
         report(stat); //report statistics
       }
@@ -160,9 +189,16 @@ void createReadMe(ostream &aus) {
       }
       aus << endl;
       break;
-//    case 2:
-//      //TODO: complete
-//      break;
+    case 2:
+      aus << "Fitness Function: Profile Matching" << endl;
+      aus << "Representation: THADS-N with Self-Driving Automata" << endl;
+      aus << "Gene length: " << GL << endl;
+      aus << "Profile: ";
+      for (double i : PD) {
+        aus << i << " ";
+      }
+      aus << endl;
+      break;
     default:
       break;
   }
@@ -179,14 +215,19 @@ void createReadMe(ostream &aus) {
   aus << "Number of vertices: " << verts << endl;
   aus << "Maximum number of mutations: " << MNM << endl;
   aus << "Tournament size: " << tsize << endl;
+  if (mode > 1) {
+    aus << "Number of States: " << states << endl;
+    aus << "Entropy Threshold for Necrotic Filter: " << ent_thres << endl;
+  }
   aus << "Decay strength for diffusion characters: " << omega << endl;
   if (!ringG) {
+    aus << "Omega value: " << omega << endl;
     aus << "Edges added at each step: " << edgeAdd << endl;
     aus << "Triangle creation probability: " << triProb << endl;
   }
   aus << endl;
   aus << "The file descriptions are as follows: " << endl;
-  aus << "best.lint -> the best fitness and it's associated gene for each run";
+  aus << "best.lint -> the best fitness and it's associated data for each run";
   aus << endl;
   aus << "difc.dat -> the diffusion characters of the best graph for each run";
   aus << endl;
@@ -228,9 +269,16 @@ void cmdLineIntro(ostream &aus) {
       }
       aus << endl;
       break;
-//    case 2:
-//      //TODO: complete
-//      break;
+    case 2:
+      aus << "Fitness Function: Profile Matching" << endl;
+      aus << "Representation: THADS-N with Self-Driving Automata" << endl;
+      aus << "Gene length: " << GL << endl;
+      aus << "Profile: ";
+      for (double i : PD) {
+        aus << i << " ";
+      }
+      aus << endl;
+      break;
     default:
       break;
   }
@@ -260,7 +308,7 @@ void initalg(const char *pLoc) {//initialize the algorithm
     iG.create(verts);
     iG.PCG(verts, edgeAdd, triProb);
   }
-  if (mode == 1) {
+  if (mode > 0) {
     inp.open(pLoc, ios::in);      //open input file
     for (int i = 0; i < PL; i++) {
       PD[i] = 0;  //pre-fill missing values
@@ -270,18 +318,17 @@ void initalg(const char *pLoc) {//initialize the algorithm
       inp.getline(buf, 19);  //read in the number
       PD[i + 1] = strtod(buf, nullptr);    //translate the number
     }
-    cout << "Profile: "; //Prints out the profile being tested
-    for (int i = 0; i <= PL; i++) {
-      cout << PD[i] << " ";
-    }
-    cout << endl;
     inp.close();
+  }
+  if (mode == 2) {
+    for (int i = 0; i < popsize; i++) {
+      bPop[i] = new bitspray(states);
+    }
   }
 }
 
 //This routine generates valid loci for the expression routine
 int validloci() {//generate an acceptable large integer
-  // TODO: Insert SDA
   int cmd;       //command type generated
   double dart;   //Random command
 
@@ -291,7 +338,23 @@ int validloci() {//generate an acceptable large integer
     dart -= CmD[++cmd]; //walk the board
   }
   cmd += (int) (NmC * (lrand48() % MAXL)); //add in the large integer part
+
   return (cmd);  //return the generated command
+}
+
+int validloci(int &psn) {
+  int cmd;
+  int lint;
+  int size = ceil(log2(NmC));
+
+  do {
+    if (!getnum(cmd, size, psn)) return -1;
+  } while (cmd > NmC - 1);
+  size = ceil(log2(MAXL));
+  if (!getnum(lint, size, psn)) return -1;
+  cmd += (int) (NmC * (lint % MAXL));
+
+  return cmd;
 }
 
 //This is expression of a large integer represenation
@@ -368,6 +431,38 @@ void express(graph &G, const int *cmd) {//express a command string
   }
 }
 
+int bitsToInt(const int bs[], int cnt) {
+  int val = bs[0];
+  for (int e = 1; e < cnt; e++) {
+    val += (int) pow(bs[e], e);
+  }
+  return val;
+}
+
+bool necroticFilter() {
+  double En = 0.0;
+  int binSize = 10;
+  int numBins = (int) pow(2, binSize);
+  double counts[numBins];
+  int vals = Qz / binSize;
+  for (int i = 0; i < numBins; i++) {
+    counts[i] = 0.0;
+  }
+  for (int i = 0; i < Qz; i += binSize) {
+    counts[bitsToInt(Q + i, binSize)]++;
+  }
+  for (int i = 0; i < numBins; i++) {
+    counts[i] /= vals;
+  }
+  for (int i = 0; i < numBins; i++) {
+    if (counts[i] > 0.0) {
+      En += -counts[i] * log(counts[i]);
+    }
+  }
+  En /= log(2);
+  return En < ent_thres;
+}
+
 double fitness(int *cmd) {//compute the epidemic length fitness
   graph G(verts);      //scratch graph
   int max, len, ttl;   //maximum, length, and total removed
@@ -392,7 +487,7 @@ double fitness(int *cmd) {//compute the epidemic length fitness
       accu += trial;
     }
     accu = accu / NSE;
-  } else if (mode == 1) {
+  } else {
     for (en = 0; en < NSE; en++) {//loop over epidemics
       cnt = 0;
       do {
@@ -418,14 +513,77 @@ double fitness(int *cmd) {//compute the epidemic length fitness
   return accu;  //return the fitness value
 }
 
-void initpop() {//initialize population
-  for (int i = 0; i < popsize; i++) {    //loop over the population
-    /***INITIALIZATION CODE***/
-    for (int j = 0; j < GL; j++) {
-      pop[i][j] = validloci(); //fill in the loci
+void developQ(bitspray &A) {//unpack the queue
+  int h, t;  //head and tail of queue
+
+  for (t = 0; t < Qz; t++) {
+    Q[t] = 0;        //clear the queue
+  }
+  A.reset(Q, h, t);     //reset the self driving automata
+  while (t < Qz - 2) {
+    A.next(Q, h, t, Qz);  //run the automata
+  }
+}
+
+bool getnum(int &val, int bits, int &psn) {//get a number from the queue
+  if (psn + bits >= Qz - 1) {
+//    cout << "ERROR: Q EMPTY" << endl;
+    return false; //safety first
+  }
+  val = 0;  //zero the value
+  for (int i = 0; i < bits; i++)
+    val = val * 2 + Q[psn++];  //assemble the integer
+  return true;
+}
+
+double fitness(int idx, bitspray &A) {
+  int psn = 0;
+
+  developQ(A);
+  if (necroticFilter()) {
+    dead[idx] = true;
+    return max_fit;
+  }
+  for (int &i : pop[idx]) {
+    i = validloci(psn);
+    if (i == -1) {
+      dead[idx] = true;
+      return max_fit;
     }
-    fit[i] = fitness(pop[i]);  //compute its fitness
-    dx[i] = i;                 //refresh the sorting index
+  }
+  double fi = fitness(pop[idx]);
+  return fi;
+}
+
+void getGene(int idx, double *probs) {
+  fitness(idx, *bPop[idx]);
+  for (int i = 0; i < NmC; i++) {
+    probs[i] = 0.0;
+  }
+  for (int &c : pop[idx]) {
+    probs[c % NmC]++;
+  }
+  for (int i = 0; i < NmC; i++) {
+    probs[i] = (double) probs[i] / GL;
+  }
+}
+
+void initpop() {//initialize population
+  if (mode < 2) {
+    for (int i = 0; i < popsize; i++) {    //loop over the population
+      for (int j = 0; j < GL; j++) {
+        pop[i][j] = validloci(); //fill in the loci
+      }
+      fit[i] = fitness(pop[i]);  //compute its fitness
+      dx[i] = i;                 //refresh the sorting index
+    }
+  } else {
+    for (int i = 0; i < popsize; i++) {
+      dead[i] = false;
+      bPop[i]->randomize();
+      fit[i] = fitness(i, *bPop[i]);
+      dx[i] = i;
+    }
   }
 }
 
@@ -440,51 +598,94 @@ void matingevent() {//run a mating event
     Tselect(fit, dx, tsize, popsize);
   }
 
-  //selection and crossover
-  cp1 = (int) lrand48() % GL;
-  cp2 = (int) lrand48() % GL;
-  if (cp1 > cp2) {
-    sw = cp1;
-    cp1 = cp2;
-    cp2 = sw;
-  }
-  for (int i = 0; i < cp1; i++) {
-    pop[dx[0]][i] = pop[dx[tsize - 2]][i];
-    pop[dx[1]][i] = pop[dx[tsize - 1]][i];
-  }
-  for (int i = cp1; i < cp2; i++) {
-    pop[dx[0]][i] = pop[dx[tsize - 1]][i];
-    pop[dx[1]][i] = pop[dx[tsize - 2]][i];
-  }
-  for (int i = cp2; i < GL; i++) {
-    pop[dx[0]][i] = pop[dx[tsize - 2]][i];
-    pop[dx[1]][i] = pop[dx[tsize - 1]][i];
-  }
+  if (mode < 2) {
+    //selection and crossover
+    cp1 = (int) lrand48() % GL;
+    cp2 = (int) lrand48() % GL;
+    if (cp1 > cp2) {
+      sw = cp1;
+      cp1 = cp2;
+      cp2 = sw;
+    }
+    for (int i = 0; i < cp1; i++) {
+      pop[dx[0]][i] = pop[dx[tsize - 2]][i];
+      pop[dx[1]][i] = pop[dx[tsize - 1]][i];
+    }
+    for (int i = cp1; i < cp2; i++) {
+      pop[dx[0]][i] = pop[dx[tsize - 1]][i];
+      pop[dx[1]][i] = pop[dx[tsize - 2]][i];
+    }
+    for (int i = cp2; i < GL; i++) {
+      pop[dx[0]][i] = pop[dx[tsize - 2]][i];
+      pop[dx[1]][i] = pop[dx[tsize - 1]][i];
+    }
 
-  //mutation
-  rp = (int) lrand48() % MNM + 1;
-  for (int i = 0; i < rp; i++) {
-    pop[dx[0]][lrand48() % GL] = validloci();
-  }
-  rp = (int) lrand48() % MNM + 1;
-  for (int i = 0; i < rp; i++) {
-    pop[dx[1]][lrand48() % GL] = validloci();
-  }
+    //mutation
+    rp = (int) lrand48() % MNM + 1;
+    for (int i = 0; i < rp; i++) {
+      pop[dx[0]][lrand48() % GL] = validloci();
+    }
+    rp = (int) lrand48() % MNM + 1;
+    for (int i = 0; i < rp; i++) {
+      pop[dx[1]][lrand48() % GL] = validloci();
+    }
 
-  //update fitness
-  fit[dx[0]] = fitness(pop[dx[0]]);
-  fit[dx[1]] = fitness(pop[dx[1]]);
+    //update fitness
+    fit[dx[0]] = fitness(pop[dx[0]]);
+    fit[dx[1]] = fitness(pop[dx[1]]);
 
-  // Skeptical tournament selection
-  if (mode == 0) {
-    fit[dx[tsize - 1]] = fitness(pop[dx[tsize - 1]]);
-    fit[dx[tsize - 2]] = fitness(pop[dx[tsize - 2]]);
+    // Skeptical tournament selection
+    if (mode == 0) {
+      fit[dx[tsize - 1]] = fitness(pop[dx[tsize - 1]]);
+      fit[dx[tsize - 2]] = fitness(pop[dx[tsize - 2]]);
+    }
+  } else {
+    bPop[dx[0]]->copy(*bPop[dx[tsize - 2]]);
+    bPop[dx[1]]->copy(*bPop[dx[tsize - 1]]);
+    bPop[dx[0]]->tpc(*bPop[dx[1]]);
+    rp = (int) lrand48() % MNM + 1;
+    bPop[dx[0]]->mutate(rp);
+    rp = (int) lrand48() % MNM + 1;
+    bPop[dx[1]]->mutate(rp);
+    // reset dead SDAs
+    dead[dx[0]] = false;
+    dead[dx[1]] = false;
+    fit[dx[0]] = fitness(dx[0], *bPop[dx[0]]);
+    fit[dx[1]] = fitness(dx[1], *bPop[dx[1]]);
   }
 }
 
 void report(ostream &aus) {//make a statistical report
   dset D;
-  D.add(fit, popsize);  //load fitness
+  int deaths = 0;
+  if (mode == 2) {
+    for (bool i : dead) {
+      if (i) {
+        deaths++;
+      }
+    }
+    double good_fit[popsize - deaths];
+    for (double &i : good_fit) {
+      i = 0.0;
+    }
+    int cnt = 0;
+    for (int i = 0; i < popsize; i++) {
+      if (!dead[i]) {
+        good_fit[cnt++] = fit[i];
+      }
+    }
+    D.add(good_fit, popsize - deaths);
+    if (D.Rmax() != max_fit) {
+      for (int i = 0; i < popsize; i++) {
+        if (dead[i]) { // update max
+          fit[i] = D.Rmax();
+        }
+      }
+      max_fit = D.Rmax();
+    }
+  } else {
+    D.add(fit, popsize);  //load fitness
+  }
 
   //print report
   if (mode == 0) {
@@ -498,16 +699,18 @@ void report(ostream &aus) {//make a statistical report
       cout << left << setw(10) << D.Rsg();
       cout << left << setw(8) << D.Rmax() << endl;
     }
-  } else if (mode == 1) {
+  } else {
     aus << left << setw(10) << D.Rmu();
     aus << left << setw(12) << D.RCI95();
     aus << left << setw(10) << D.Rsg();
-    aus << left << setw(8) << D.Rmin() << endl;
+    aus << left << setw(8) << D.Rmin() << "\t";
+    aus << "Dead: " << deaths << endl;
     if (verbose) {
       cout << left << setw(10) << D.Rmu();
       cout << left << setw(12) << D.RCI95();
       cout << left << setw(10) << D.Rsg();
-      cout << left << setw(8) << D.Rmin() << endl;
+      cout << left << setw(12) << D.Rmin() << "\t";
+      cout << "Dead: " << deaths << endl;
     }
   }
 }
@@ -518,8 +721,6 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
   double En;
   static double M[verts][verts];
   static double Ent[verts];
-//  fstream initGOut;    //graph output file
-//  char fn[60];     //file name construction buffer
 
   b = 0;
   if (mode == 0) {
@@ -536,9 +737,22 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
     }
   }
 
-  //output the fitness and the gene
+  //output the fitness and the associated data
   aus << fit[b] << " -fitness" << endl;
-  // TODO: Write the SDA
+  if (mode == 2) {
+    double probs[NmC];
+    getGene(b, probs);
+    // Write the SDA
+    aus << "Self-Driving Automata" << endl;
+    bPop[b]->print(aus);
+    // Command densities
+    aus << "Resultant Command Densities" << endl;
+    aus << probs[0];
+    for (int i = 1; i < NmC; i++) {
+      aus << " " << probs[i];
+    }
+    aus << endl;
+  }
   // Write the gene
   aus << "Gene" << endl;
   aus << pop[b][0];
@@ -550,9 +764,8 @@ void reportbest(ostream &aus, ostream &difc) {//report the best graph
   G.empty(verts);
   express(G, pop[b]);
   aus << "Graph" << endl;
-//  sprintf(fn, "%sGraph%d.dat", outLoc, run);
-//  gout.open(fn, ios::out);
   G.write(aus);
+  aus << endl;
   for (int i = 0; i < G.size(); i++) {
     G.DiffChar(i, omega, M[i]);
   }
