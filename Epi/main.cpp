@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
    */
 
   mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
-  ringG = false;
+  ringG = true;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
    * Mode 1 -> Profile Matching (w Densities)
@@ -377,7 +377,8 @@ void express(graph &G, const int *cmd) {//express a command string
       case 0://Toggle
         a = block % verts;
         b = (block / verts) % verts; //get vertex numbers
-        G.toggle(a, b);    //toggle edge {a,b}
+        c = (block / verts / verts) % 2;
+        G.toggle(a, b, c);    //toggle edge {a,b}
         break;
       case 1://Hop
         //get vertex numbers

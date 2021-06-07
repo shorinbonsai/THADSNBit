@@ -9,7 +9,7 @@ using namespace std;
 
 //The is the number of new vertices created when a set enlarges
 #define SETINCR 10
-#define startingWeights 3
+
 
 //fitness proportional selector used in simulations
 int rselect(double *v, double ttl, int N);
@@ -154,7 +154,7 @@ class graph {
   void ladd(int v, int n1, int n2);    //local force edge
   void del(int a, int b);             //force an edge to be gone
   void ldel(int v, int n1, int n2);    //local remove edge
-  void toggle(int a, int b);          //toggle an edge
+  void toggle(int a, int b, int c);          //toggle an edge
   void orig_toggle(int a, int b);          //toggle an edge
   void loggle(int v, int n1, int n2);  //local toggle
   void simplexify(int a);            //simplexify at a

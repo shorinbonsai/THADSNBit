@@ -12,7 +12,9 @@ using namespace std;
 
 #include "setu.h"
 bool weightedEdges{true};
+bool toggle_add{true};
 #define maxWeights 3
+#define startingWeights 3
 
 
 //fitness proportional selector used in simulations
@@ -140,8 +142,7 @@ int set::add(int z) {//add a member, returns true if a not ALREADY
      mem[0] = z;
      n = 1;
      return (1);
-    //TODO Multiset possibility?
-    //bit of a messy check to cap number elements in set
+    //bit of a messy check to cap number elements in multiset
   }  else {//existing set, see if the element is new
     int freq = ElementCount(z);
     for (i = 0; i < n; i++){
@@ -732,7 +733,7 @@ void graph::WalkO(int *wk, int wl) {//overlaying walk representation
   clearE();
   for (i = 0; i < wl - 1; i++)
     if (edgeP(wk[i], wk[i + 1]) == 0)
-      toggle(wk[i],
+      orig_toggle(wk[i],
              wk[i + 1]);
 
 }
@@ -742,7 +743,7 @@ void graph::WalkT(int *wk, int wl) {//toggling walk representation
   int i;
 
   clearE();
-  for (i = 0; i < wl - 1; i++)toggle(wk[i], wk[i + 1]);
+  for (i = 0; i < wl - 1; i++)orig_toggle(wk[i], wk[i + 1]);
 
 }
 
@@ -752,7 +753,7 @@ void graph::EdgeLst(int *el, int ne) {//Edge list
   int i;
 
   clearE();
-  for (i = 0; i < ne - 1; i += 2)toggle(el[i], el[i + 1]);
+  for (i = 0; i < ne - 1; i += 2)orig_toggle(el[i], el[i + 1]);
 
 }
 /********************************************************************/
@@ -784,7 +785,7 @@ void graph::ADTS(int **cs, int L) {//implement an add delete toggle swap
         //cout << "DEL" << endl;
         break;
       case 2: //Toggle
-        toggle(cs[c][1] % V, cs[c][2] % V);
+        orig_toggle(cs[c][1] % V, cs[c][2] % V);
         //cout << "TOG" << endl;
         break;
       case 3: //edge swap with degree bound two
@@ -821,7 +822,7 @@ void graph::HADTS(int **cs, int L) {//implement an add delete toggle swap
         //cout << "DEL" << endl;
         break;
       case 3: //Toggle
-        toggle(cs[c][1] % V, cs[c][2] % V);
+        orig_toggle(cs[c][1] % V, cs[c][2] % V);
         //cout << "TOG" << endl;
         break;
       case 4: //edge swap with degree bound two
@@ -1102,11 +1103,14 @@ void graph::ladd(int v, int n1, int n2) {//hop an edge
 }
 
 void graph::del(int a, int b) {//force an edge to be gone
-
+  int u,v;
   if ((a < 0) || (a >= V))a = ((a % V) + V) % V;  //failsafe vertex identity a
   if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
   if (a == b)return;  //enforce simplicity
-  if (nbr[a].memb(b) == 1)toggle(a, b);
+  if (nbr[a].memb(b) == 1){
+      u = nbr[a].remo(b);
+      v = nbr[b].remo(a);
+  }
 
 }
 
@@ -1139,8 +1143,7 @@ void graph::ldel(int v, int n1, int n2) {//hop an edge
   del(v, nb2); //delete the new edge
 }
 
-//TODO: clarify if toggle should switch all edges between vertices or just one
-void graph::toggle(int a, int b) {//toggle an edge
+void graph::toggle(int a, int b, int c) {//toggle an edge
   if(!weightedEdges)  {
       orig_toggle(a,b);
       return;
@@ -1152,22 +1155,36 @@ void graph::toggle(int a, int b) {//toggle an edge
   if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
   if (a == b)return;  //enforce simplicity
 
-  int num_edges = nbr[a].ElementCount(b);
-
-
-  if (nbr[a].memb(b) == 1) {//edge exists, turn off
-    //cout << "Toggle " << a << " " << b << " off." << endl;
-    u = nbr[a].remo(b);
-    v = nbr[b].remo(a);
-    //if(u!=v)cout << u << " " << v << endl;
-    E--;
-  } else {//edge does not exist, turn on
-    //cout << "Toggle " << a << " " << b << " on." << endl;
-    u = nbr[a].add(b);
-    v = nbr[b].add(a);
-    //if(u!=v)cout << u << " " << v << endl;
-    E++;
+  if(nbr[a].memb(b)==0){
+      u = nbr[a].add(b);
+      v = nbr[b].add(a);
+      E++;
+  }else if (nbr[a].ElementCount(b) == maxWeights){
+      u = nbr[a].remo(b);
+      v = nbr[b].remo(a);
+      E--;
+  }else if (c % 2){
+      u = nbr[a].add(b);
+      v = nbr[b].add(a);
+      E++;
+  }else {
+      u = nbr[a].remo(b);
+      v = nbr[b].remo(a);
+      E--;
   }
+//  if (nbr[a].memb(b) == 1) {//edge exists, turn off
+//    //cout << "Toggle " << a << " " << b << " off." << endl;
+//    u = nbr[a].remo(b);
+//    v = nbr[b].remo(a);
+//    //if(u!=v)cout << u << " " << v << endl;
+//    E--;
+//  } else {//edge does not exist, turn on
+//    //cout << "Toggle " << a << " " << b << " on." << endl;
+//    u = nbr[a].add(b);
+//    v = nbr[b].add(a);
+//    //if(u!=v)cout << u << " " << v << endl;
+//    E++;
+//  }
 
 }
 
@@ -1224,8 +1241,21 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
   if (edgeP(v, nb2) == 1)return;  //no hop possible - its a triangle
   if (v == nb2)return; //trying to add a loop
   //cout << "Inserting " << v << " " << nb2 << endl;
-  toggle(v, nb2); //toggle the new edge
 
+  int num_edges = nbr[v].ElementCount(nb2);
+  int x1, x2;
+  if (num_edges <= 0 || (toggle_add && num_edges < 3) ){
+      if (num_edges > 0) toggle_add = false;
+      x1 = nbr[v].add(nb2);
+      x2 = nbr[nb2].add(v);
+      E++;
+  } else {
+      if (num_edges < 3) toggle_add = true;
+      x1 = nbr[v].remo(nb2);
+      x2 = nbr[nb2].remo(v);
+      E--;
+  }
+//  toggle(v, nb2); //toggle the new edge
 }
 
 void graph::simplexify(int a) {//simplexify at a
@@ -1322,10 +1352,10 @@ void graph::edgeswap(int a, int b, int k) {//decode and perform an edge swap
   if (nbr[n1].memb(n2))return; //added edge in quartet
   /****************ACTUALLY POSSIBLE TO SWAP*****************************/
   //cout << v1 << " " << n1 << " " << v2 << " " << n2 << endl;
-  toggle(v1, n1);
-  toggle(v2, n2);
-  toggle(v1, n2);   //Perform the edge swap
-  toggle(v2, n1);
+  orig_toggle(v1, n1);
+  orig_toggle(v2, n2);
+  orig_toggle(v1, n2);   //Perform the edge swap
+  orig_toggle(v2, n1);
 
 }
 
@@ -1568,11 +1598,23 @@ int graph::nbrmod(int v, int n) {//compute the n%degreeth neighbor of v
 
 }
 
+//TODO modify for weighted graph
 int graph::degree(int v) {//report the degree of v
 
   if ((v >= V) || (v < 0))return (0);  //return zero for stupid request
-
-  return (nbr[v].size());
+  int tmp = nbr[v].size();
+  if(tmp == 0) {return 0;}
+  int result = 1;
+  for(int i=0; i<tmp-1; i++){
+      if (nbr[v].memz(i) == nbr[v].memz(i+1)){
+          continue;
+      }
+      else {
+          result++;
+      }
+  }
+  return result;
+//  return (nbr[v].size());
 
 }
 
