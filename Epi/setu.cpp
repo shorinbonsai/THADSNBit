@@ -1049,13 +1049,27 @@ void graph::NWS(int n, int k, double p) {//Newman-Watts-Strogatz graph
 
 //modifiers
 void graph::add(int a, int b) {//force an edge to add
-
+  int u,v;
   if ((a < 0) || (a >= V))a = ((a % V) + V) % V;  //failsafe vertex identity a
   if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
   if (a == b)return;  //enforce simplicity
-  if (nbr[a].memb(b) == 0)toggle(a, b);
+
+  int num_edges = nbr[a].ElementCount(b);
+  if(weightedEdges == true){
+      if(num_edges < maxWeights){
+          u = nbr[a].add(b);
+          v = nbr[b].add(a);
+          E++;
+      }
+  } else if (nbr[a].memb(b) == 0)orig_toggle(a, b);
 
 }
+
+//int graph::multiEdgeCount(int a, int b){
+//
+//    return 1;
+//}
+
 
 void graph::ladd(int v, int n1, int n2) {//hop an edge
 
@@ -1125,6 +1139,7 @@ void graph::ldel(int v, int n1, int n2) {//hop an edge
   del(v, nb2); //delete the new edge
 }
 
+//TODO: clarify if toggle should switch all edges between vertices or just one
 void graph::toggle(int a, int b) {//toggle an edge
   if(!weightedEdges)  {
       orig_toggle(a,b);
@@ -1137,7 +1152,8 @@ void graph::toggle(int a, int b) {//toggle an edge
   if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
   if (a == b)return;  //enforce simplicity
 
-//    count(v.begin() , v.end() , 23)
+  int num_edges = nbr[a].ElementCount(b);
+
 
   if (nbr[a].memb(b) == 1) {//edge exists, turn off
     //cout << "Toggle " << a << " " << b << " off." << endl;
