@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
    * Output Root, Profile Location, Profile Number
    */
 
-  mode = 2;   //  0 - Epidemic Length, 1 - Profile Matching
+  mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
   ringG = false;
   /*
    * Mode 0 -> Epidemic Length (w Densities)

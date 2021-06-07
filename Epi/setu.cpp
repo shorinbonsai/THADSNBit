@@ -11,6 +11,9 @@
 using namespace std;
 
 #include "setu.h"
+bool weightedEdges{true};
+#define maxWeights 3
+
 
 //fitness proportional selector used in simulations
 int rselect(double *v, double ttl, int N) {
@@ -128,17 +131,24 @@ int set::add(int z) {//add a member, returns true if a not ALREADY
   //write(cout);
 
   if (max == 0) {//empty set, create everything
-    max = SETINCR;
-    n = 1;
-    mem = new int[max];
-    mem[0] = z;
-    return (1);
-  } else if (n == 0) {
-    mem[0] = z;
-    n = 1;
-    return (1);
-  } else {//existing set, see if the element is new
-    for (i = 0; i < n; i++)if (mem[i] == z)return (0);
+     max = SETINCR;
+     n = 1;
+     mem = new int[max];
+     mem[0] = z;
+     return (1);
+  }  else if (n == 0) {
+     mem[0] = z;
+     n = 1;
+     return (1);
+    //TODO Multiset possibility?
+    //bit of a messy check to cap number elements in set
+  }  else {//existing set, see if the element is new
+    int freq = ElementCount(z);
+    for (i = 0; i < n; i++){
+        if(weightedEdges == false || freq == maxWeights ){
+            if (mem[i] == z)return (0);
+        }
+    }
     if (n == max)enlarge();  //create more space if it is needed
     if (mem[n - 1] < z) {
       //cout << "add end" << endl;
@@ -183,6 +193,16 @@ int set::size() {//what is the size of the set
 
   return (n);
 
+}
+
+//element count method for multiset
+int set::ElementCount(int z){
+    int i;
+    int rslt = 0;
+    for (i = 0; i < n; i++) {
+        if (mem[i] == z) rslt++;
+    }
+    return rslt;
 }
 
 int set::memb(int z) {//is z a member? 0=no 1=yes
@@ -666,7 +686,7 @@ void graph::Hn(int dim) {//Hypercube
 
 void graph::RNGnm(int n, int m) {//Ring with +/-m neighbors
 
-  int i, j;
+  int i, j, k;
 
   if ((M == 0) || (M < n))create(n); //make sure storage is available
 
@@ -674,10 +694,14 @@ void graph::RNGnm(int n, int m) {//Ring with +/-m neighbors
 
   V = n;
   E = m * n;  //adding the vertex and edge values
+  E /=2;
   for (i = 0; i < n; i++) {
     for (j = 1; j <= m; j++) {
-      nbr[i].add((i + j) % n);
-      nbr[i].add((i - j + n) % n);
+        for(k=0; k<startingWeights; k++){
+            nbr[i].add((i + j) % n);
+            nbr[i].add((i - j + n) % n);
+        }
+
     }
   }
 }
@@ -1102,13 +1126,19 @@ void graph::ldel(int v, int n1, int n2) {//hop an edge
 }
 
 void graph::toggle(int a, int b) {//toggle an edge
-
+  if(!weightedEdges)  {
+      orig_toggle(a,b);
+      return;
+  }
   int u, v;
 
   if (M == 0)return;
   if ((a < 0) || (a >= V))a = ((a % V) + V) % V;  //failsafe vertex identity a
   if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
   if (a == b)return;  //enforce simplicity
+
+//    count(v.begin() , v.end() , 23)
+
   if (nbr[a].memb(b) == 1) {//edge exists, turn off
     //cout << "Toggle " << a << " " << b << " off." << endl;
     u = nbr[a].remo(b);
@@ -1124,6 +1154,33 @@ void graph::toggle(int a, int b) {//toggle an edge
   }
 
 }
+
+
+void graph::orig_toggle(int a, int b) {//toggle an edge
+
+    int u, v;
+
+    if (M == 0)return;
+    if ((a < 0) || (a >= V))a = ((a % V) + V) % V;  //failsafe vertex identity a
+    if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
+    if (a == b)return;  //enforce simplicity
+    if (nbr[a].memb(b) == 1) {//edge exists, turn off
+        //cout << "Toggle " << a << " " << b << " off." << endl;
+        u = nbr[a].remo(b);
+        v = nbr[b].remo(a);
+        //if(u!=v)cout << u << " " << v << endl;
+        E--;
+    } else {//edge does not exist, turn on
+        //cout << "Toggle " << a << " " << b << " on." << endl;
+        u = nbr[a].add(b);
+        v = nbr[b].add(a);
+        //if(u!=v)cout << u << " " << v << endl;
+        E++;
+    }
+
+}
+
+
 
 void graph::loggle(int v, int n1, int n2) {//hop an edge
 
