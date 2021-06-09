@@ -12,7 +12,7 @@ using namespace std;
 
 #include "setu.h"
 bool weightedEdges{true};
-bool toggle_add{true};
+bool toggle_add;
 #define maxWeights 3
 #define startingWeights 3
 
@@ -406,7 +406,7 @@ graph::graph() {//initialize an empty structure
     quality[i] = 0;
     weights[i] = 0;
   }  //zero out weights,quals
-
+    toggle_add = true;
 }
 
 graph::graph(int max) {//initialize to maximum of M vertices
@@ -1244,13 +1244,16 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
 
   int num_edges = nbr[v].ElementCount(nb2);
   int x1, x2;
-  if (num_edges <= 0 || (toggle_add && num_edges < 3) ){
-      if (num_edges > 0) toggle_add = false;
+  if (num_edges < 0 || (toggle_add == true && num_edges < 3) ){
+      if (num_edges > 0){
+          toggle_add = false;
+          cout << "SWITCHing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
+      }
       x1 = nbr[v].add(nb2);
       x2 = nbr[nb2].add(v);
       E++;
   } else {
-      if (num_edges < 3) toggle_add = true;
+      if (num_edges < 3) {toggle_add = true;}
       x1 = nbr[v].remo(nb2);
       x2 = nbr[nb2].remo(v);
       E--;

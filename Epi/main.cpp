@@ -22,7 +22,7 @@ using namespace std;
 //#define ftl 50              //  Final test length
 #define verbose true
 #define runs 30
-#define mevs 40000
+#define mevs 400000
 #define RIs 100
 #define RE ((long)mevs/RIs)
 #define NmC (long)9
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
    * Output Root, Profile Location, Profile Number
    */
 
-  mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
+  mode = 1;   //  0 - Epidemic Length, 1 - Profile Matching
   ringG = true;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
