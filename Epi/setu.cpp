@@ -406,7 +406,7 @@ graph::graph() {//initialize an empty structure
     quality[i] = 0;
     weights[i] = 0;
   }  //zero out weights,quals
-    toggle_add = true;
+    toggle_add = false;
 }
 
 graph::graph(int max) {//initialize to maximum of M vertices
@@ -684,6 +684,7 @@ void graph::Hn(int dim) {//Hypercube
     }
   }
 }
+
 
 void graph::RNGnm(int n, int m) {//Ring with +/-m neighbors
 
@@ -1110,6 +1111,7 @@ void graph::del(int a, int b) {//force an edge to be gone
   if (nbr[a].memb(b) == 1){
       u = nbr[a].remo(b);
       v = nbr[b].remo(a);
+      E--;
   }
 
 }
@@ -1172,19 +1174,6 @@ void graph::toggle(int a, int b, int c) {//toggle an edge
       v = nbr[b].remo(a);
       E--;
   }
-//  if (nbr[a].memb(b) == 1) {//edge exists, turn off
-//    //cout << "Toggle " << a << " " << b << " off." << endl;
-//    u = nbr[a].remo(b);
-//    v = nbr[b].remo(a);
-//    //if(u!=v)cout << u << " " << v << endl;
-//    E--;
-//  } else {//edge does not exist, turn on
-//    //cout << "Toggle " << a << " " << b << " on." << endl;
-//    u = nbr[a].add(b);
-//    v = nbr[b].add(a);
-//    //if(u!=v)cout << u << " " << v << endl;
-//    E++;
-//  }
 
 }
 
@@ -1238,22 +1227,25 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
     n2 = (n2 % d2 + d2) % d2;  //force possible neighbor, again
   nb2 = nbrmod(nb1, n2);  //retrieve nieghbor-squared
   //cout << v << " " << nb1 << " " << nb2 << endl;
-  if (edgeP(v, nb2) == 1)return;  //no hop possible - its a triangle
+  //TODO Check edgeP situation possibly blocking transition to else block
+  int num_edges = nbr[v].ElementCount(nb2);
+  if (edgeP(v, nb2) == 1 && num_edges == maxWeights)return;  //no hop possible - its a triangle
   if (v == nb2)return; //trying to add a loop
   //cout << "Inserting " << v << " " << nb2 << endl;
 
-  int num_edges = nbr[v].ElementCount(nb2);
   int x1, x2;
-  if (num_edges < 0 || (toggle_add == true && num_edges < 3) ){
+  if (num_edges <= 0 || (toggle_add == true && num_edges < maxWeights) ){
       if (num_edges > 0){
           toggle_add = false;
           cout << "SWITCHing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
       }
       x1 = nbr[v].add(nb2);
       x2 = nbr[nb2].add(v);
+
       E++;
   } else {
-      if (num_edges < 3) {toggle_add = true;}
+      if (num_edges < maxWeights) {toggle_add = true;}
+      cout << "REMOVING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
       x1 = nbr[v].remo(nb2);
       x2 = nbr[nb2].remo(v);
       E--;
@@ -1605,19 +1597,19 @@ int graph::nbrmod(int v, int n) {//compute the n%degreeth neighbor of v
 int graph::degree(int v) {//report the degree of v
 
   if ((v >= V) || (v < 0))return (0);  //return zero for stupid request
-  int tmp = nbr[v].size();
-  if(tmp == 0) {return 0;}
-  int result = 1;
-  for(int i=0; i<tmp-1; i++){
-      if (nbr[v].memz(i) == nbr[v].memz(i+1)){
-          continue;
-      }
-      else {
-          result++;
-      }
-  }
-  return result;
-//  return (nbr[v].size());
+//  int tmp = nbr[v].size();
+//  if(tmp == 0) {return 0;}
+//  int result = 1;
+//  for(int i=0; i<tmp-1; i++){
+//      if (nbr[v].memz(i) == nbr[v].memz(i+1)){
+//          continue;
+//      }
+//      else {
+//          result++;
+//      }
+//  }
+//  return result;
+  return (nbr[v].size());
 
 }
 
