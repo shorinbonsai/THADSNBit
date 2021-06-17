@@ -16,11 +16,11 @@ using namespace std;
 /*************************algorithm controls******************************/
 #define PL 16
 #define NSE 50
-#define alpha 0.5
+#define alpha 0.3
 #define mepl 3              //  Minimum epidemic length
 #define rse 5               //  Re-try short epidemics
 //#define ftl 50              //  Final test length
-#define verbose true
+#define verbose false
 #define runs 30
 #define mevs 400000
 #define RIs 100
@@ -28,7 +28,7 @@ using namespace std;
 #define NmC (long)9
 #define EDGB 2              //  Minimum degree for swap
 #define popsize 100
-#define verts 160
+#define verts 128
 #define GL 256
 #define RNS 91207819
 #define MAXL (long)pow(verts, 3)  //  Size of integer
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
    */
 
   mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
-  ringG = false;
+  ringG = true;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
    * Mode 1 -> Profile Matching (w Densities)

@@ -13,8 +13,8 @@ using namespace std;
 #include "setu.h"
 bool weightedEdges{true};
 bool toggle_add;
-#define maxWeights 3
-#define startingWeights 3
+#define maxWeights 5
+#define startingWeights 5
 
 
 //fitness proportional selector used in simulations
@@ -702,6 +702,7 @@ void graph::RNGnm(int n, int m) {//Ring with +/-m neighbors
         for(k=0; k<startingWeights; k++){
             nbr[i].add((i + j) % n);
             nbr[i].add((i - j + n) % n);
+            E++;
         }
 
     }
@@ -1237,7 +1238,7 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
   if (num_edges <= 0 || (toggle_add == true && num_edges < maxWeights) ){
       if (num_edges > 0){
           toggle_add = false;
-          cout << "SWITCHing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
+//          cout << "SWITCHing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
       }
       x1 = nbr[v].add(nb2);
       x2 = nbr[nb2].add(v);
@@ -1245,7 +1246,7 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
       E++;
   } else {
       if (num_edges < maxWeights) {toggle_add = true;}
-      cout << "REMOVING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
+//      cout << "REMOVING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
       x1 = nbr[v].remo(nb2);
       x2 = nbr[nb2].remo(v);
       E--;
@@ -1697,15 +1698,15 @@ void graph::RecordW(int num, int dex, double val) {//W[num][dex]=val
     }
   }
 }
-
+//TODO remove extra returns
 int graph::RetrieveQ(int num, int dex) {//return Q[num][dex]
 
   if ((num >= 0) && (num < MAXQ)
       && (quality[num] != 0)) {//if the quality is there
     if ((dex >= 0) && (dex < V)) {//if vertex is there
       return (quality[num][dex]);
-    }
-  }
+    }else{return 0;}
+  }else{return 0;}
 }
 
 double graph::RetrieveW(int num, int dex) {//return Q[num][dex]
@@ -1714,8 +1715,8 @@ double graph::RetrieveW(int num, int dex) {//return Q[num][dex]
       && (weights[num] != 0)) {//if the quality is there
     if ((dex >= 0) && (dex < V)) {//if vertex is there
       return (weights[num][dex]);
-    }
-  }
+    }else{return 0;}
+  }else{return 0;}
 }
 
 //Simulation methods
