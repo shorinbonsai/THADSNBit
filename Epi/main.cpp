@@ -15,14 +15,14 @@ using namespace std;
 
 /*************************algorithm controls******************************/
 #define PL 16
-#define NSE 50
+#define NSE 5
 #define alpha 0.3
 #define mepl 3              //  Minimum epidemic length
 #define rse 5               //  Re-try short epidemics
 //#define ftl 50              //  Final test length
-#define verbose false
+#define verbose true
 #define runs 30
-#define mevs 400000
+#define mevs 250000
 #define RIs 100
 #define RE ((long)mevs/RIs)
 #define NmC (long)9
@@ -636,10 +636,10 @@ void matingevent() {//run a mating event
     fit[dx[1]] = fitness(pop[dx[1]]);
 
     // Skeptical tournament selection
-    if (mode == 0) {
-      fit[dx[tsize - 1]] = fitness(pop[dx[tsize - 1]]);
-      fit[dx[tsize - 2]] = fitness(pop[dx[tsize - 2]]);
-    }
+//    if (mode == 0) {
+//      fit[dx[tsize - 1]] = fitness(pop[dx[tsize - 1]]);
+//      fit[dx[tsize - 2]] = fitness(pop[dx[tsize - 2]]);
+//    }
   } else {
     bPop[dx[0]]->copy(*bPop[dx[tsize - 2]]);
     bPop[dx[1]]->copy(*bPop[dx[tsize - 1]]);

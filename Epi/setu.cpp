@@ -1228,12 +1228,12 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
     n2 = (n2 % d2 + d2) % d2;  //force possible neighbor, again
   nb2 = nbrmod(nb1, n2);  //retrieve nieghbor-squared
   //cout << v << " " << nb1 << " " << nb2 << endl;
-  //TODO Check edgeP situation possibly blocking transition to else block
-  int num_edges = nbr[v].ElementCount(nb2);
-  if (edgeP(v, nb2) == 1 && num_edges == maxWeights)return;  //no hop possible - its a triangle
+
+
   if (v == nb2)return; //trying to add a loop
   //cout << "Inserting " << v << " " << nb2 << endl;
 
+  int num_edges = nbr[v].ElementCount(nb2);
   int x1, x2;
   if (num_edges <= 0 || (toggle_add == true && num_edges < maxWeights) ){
       if (num_edges > 0){
@@ -1315,7 +1315,9 @@ void graph::hop(int v, int n1, int n2) {//hop an edge
     n2 = (n2 % d2 + d2) % d2;  //force possible neighbor, again
   nb2 = nbrmod(nb1, n2);  //retrieve nieghbor-squared
   //cout << v << " " << nb1 << " " << nb2 << endl;
-  if (edgeP(v, nb2) == 1)return;  //no hop possible - its a triangle
+  int num_edges = nbr[v].ElementCount(nb2);
+  if (edgeP(v, nb2) == 1 && num_edges == maxWeights)return;  //no hop possible - its a triangle
+
   if (v == nb2)return; //trying to add a loop
   //cout << "Deleting " << v << " " << nb1 << endl;
   del(v, nb1); //delete the old edge
