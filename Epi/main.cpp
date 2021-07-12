@@ -20,7 +20,7 @@ using namespace std;
 #define mepl 3              //  Minimum epidemic length
 #define rse 5               //  Re-try short epidemics
 //#define ftl 50              //  Final test length
-#define verbose true
+#define verbose false
 #define runs 30
 #define mevs 250000
 #define RIs 100
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
    */
 
   mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
-  ringG = true;
+  ringG = false;
   /*
    * Mode 0 -> Epidemic Length (w Densities)
    * Mode 1 -> Profile Matching (w Densities)
@@ -102,7 +102,8 @@ int main(int argc, char *argv[]) {
 
   initalg(pLoc);
   if (mode < 2) { // Densities
-    int offset = 3;
+      //change offset to 3 for ED and 4 for profile
+    int offset = 4;
     for (int cmd = 0; cmd < NmC; cmd++) {
       CmD[cmd] = strtod(argv[cmd + offset], nullptr);
     }

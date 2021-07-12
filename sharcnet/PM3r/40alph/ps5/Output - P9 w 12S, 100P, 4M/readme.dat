@@ -1,0 +1,27 @@
+This file contains the info about the files in this folder.
+Graph Evolution Tool.
+Initial Graph: Ring with m = 2
+Fitness Function: Profile Matching
+Representation: THADS-N with Operation Densities
+Gene length: 256
+Densities: 0.00894393 0.000178769 0.323268 0.0182953 0.00196552 0.0127864 0.496811 0.024949 0.112802 
+Profile: 1 1 4 7 10 12 13 14 12 10 8 6 4 2 1 1 0 
+
+The parameter settings are as follows: 
+Number of sample epidemics: 50
+Alpha: 0.4
+Minimum epidemic length: 3
+Re-tries for short epidemics: 5
+Runs: 30
+Mating events: 40000
+Minimum degree for swap: 2
+Population size: 100
+Number of vertices: 128
+Maximum number of mutations: 4
+Tournament size: 5
+Decay strength for diffusion characters: 0.5
+
+The file descriptions are as follows: 
+best.lint -> the best fitness and it's associated data for each run
+difc.dat -> the diffusion characters of the best graph for each run
+run##.dat -> population statistics for each run

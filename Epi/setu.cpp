@@ -960,15 +960,21 @@ void graph::PCG(int n, int m, double prob) {
             } while (edgeP(nn, dx[i]) && neigh.size() > 0);
 
             if (!edgeP(nn, dx[i])) { //add edge that creates triangle
-              add(nn, dx[i]);
-              temp.add(i); //add vertex to temp
-              temp.add(ix[nn]); //add new edge to temp
+              for(int x=0; x< startingWeights; x++){
+                  add(nn, dx[i]);
+                  temp.add(i); //add vertex to temp
+                  temp.add(ix[nn]); //add new edge to temp
+              }
+
             }
           }
         }
-        add(dx[i], dx[target]); //add an edge to target
-        temp.add(target); //add target to temp
-        temp.add(i); //add new vertex to temp
+        for(int x=0; x< startingWeights; x++){
+            add(dx[i], dx[target]); //add an edge to target
+            temp.add(target); //add target to temp
+            temp.add(i); //add new vertex to temp
+        }
+
       }
     }
     for (j = 0; j < temp.size(); j++)
