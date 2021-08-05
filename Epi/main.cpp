@@ -6,11 +6,15 @@
 #include <string>
 #include <cstring>
 // #include <filesystem>
+#include <stdlib.h>
+#include <ctime>
 
 using namespace std;
 
+//#include "filesystem.hpp"
+//namespace filesystem = ghc::filesystem;
 
-/***********filesystem c++11 version************/
+///***********filesystem c++11 version************/
 #if defined(__cplusplus) && __cplusplus >= 201703L && defined(__has_include)
 #if __has_include(<filesystem>)
 #define GHC_USE_STD_FS
@@ -40,9 +44,9 @@ namespace filesystem = ghc::filesystem;
 #define mepl 3              //  Minimum epidemic length
 #define rse 5               //  Re-try short epidemics
 //#define ftl 50              //  Final test length
-#define verbose false
-#define runs 30
-#define mevs 250000
+#define verbose true
+#define runs 1
+#define mevs 250
 #define RIs 100
 #define RE ((long)mevs/RIs)
 #define NmC (long)9
@@ -126,7 +130,8 @@ int main(int argc, char *argv[]) {
             outRoot, pNum, states, popsize, MNM);
     filesystem::create_directory(outLoc);
 
-    patient0 = 59;
+    srand((unsigned) time(0));
+    patient0 = rand() % verts;
     initalg(pLoc);
     if (mode < 2) { // Densities
         //change offset to 3 for ED and 4 for profile
@@ -169,15 +174,18 @@ int main(int argc, char *argv[]) {
         cout << "Started" << endl;
     }
     for (int run = 0; run < runs; run++) {
+        srand((unsigned) time(0));
+        patient0 = rand() % verts;
         p0index = 0;
         sprintf(fn, "%srun%02d.dat", outLoc, run); // File name
         stat.open(fn, ios::out);
         if (verbose) cmdLineRun(run, cout);
         initpop();
+        stat << left << setw(4) << 0;
         report(stat); //report the statistics of the initial population
         int mateInterval = mevs / 10;
         patient0out << "########################" << endl;
-        patient0out << "Run # " << run << endl;
+        patient0out << "Run # " << run+1 << endl;
         patient0out << "########################" << endl;
         for (int mev = 0; mev < mevs; mev++) {//do mating events
             if (mev % mateInterval == 0) {
@@ -211,6 +219,7 @@ int main(int argc, char *argv[]) {
                     cout << left << setw(5) << run;
                     cout << left << setw(4) << (mev + 1) / RE;
                 }
+                stat << left << setw(4) << (mev + 1) / RE;
                 report(stat); //report statistics
             }
         }
@@ -241,6 +250,7 @@ int main(int argc, char *argv[]) {
     patient0out.close();
     best.close();
     dchar.close();
+    delete[] outLoc;
     return (0);  //keep the system happy
 }
 
