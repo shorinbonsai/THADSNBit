@@ -1,0 +1,31 @@
+This file contains the info about the files in this folder.
+Graph Evolution Tool.
+Initial Graph: Power Law Cluster Graph
+Fitness Function: Epidemic Length
+Representation: THADS-N with Operation Densities
+Gene length: 256
+Densities: 0.00196594 0.0727093 0.000971274 0.0435422 0.035511 0.0122562 0.794551 0.0201347 0.0183588 
+
+The parameter settings are as follows: 
+Number of sample epidemics: 5
+Alpha: 0.3
+Minimum epidemic length: 3
+Re-tries for short epidemics: 5
+Runs: 30
+Mating events: 250000
+Minimum degree for swap: 2
+Population size: 100
+Number of vertices: 128
+Maximum number of mutations: 4
+Tournament size: 5
+Decay strength for diffusion characters: 0.5
+Omega value: 0.5
+Edges added at each step: 1
+Triangle creation probability: 0.5
+
+The file descriptions are as follows: 
+best.lint -> the best fitness and it's associated data for each run
+difc.dat -> the diffusion characters of the best graph for each run
+run##.dat -> population statistics for each run
+patient0.dat -> record of patient zeros
+initGraph.dat -> the initial power law clustering graph
