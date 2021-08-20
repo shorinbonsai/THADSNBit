@@ -5,6 +5,7 @@
 #ifndef    _SETU_H
 #define    _SETU_H
 
+#include <vector>
 using namespace std;
 
 //The is the number of new vertices created when a set enlarges
@@ -63,7 +64,10 @@ class set {
 
   int max;   //maximum number of objects in the set
   int n;     //number of objects in the set
-  int *mem;  //members, sorted into increasing order
+  /*
+//  int *mem;  //members, sorted into increasing order
+   */
+  std::vector<int> mem;
 
 
 };

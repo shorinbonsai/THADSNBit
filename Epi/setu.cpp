@@ -14,8 +14,11 @@ using namespace std;
 
 bool weightedEdges{true};
 bool toggle_add;
+bool add_many;
+bool del_many;
 #define maxWeights 5
 #define startingWeights 3
+std::vector<int> mem;
 
 
 //fitness proportional selector used in simulations
@@ -36,7 +39,7 @@ int rselect(double *v, double ttl, int N) {
 set::set() {//default constructor
 
     max = n = 0;  //max==0 is the clue that the structure is unallocated
-    mem = 0;
+    std::vector<int> mem;
 
 }
 
@@ -50,14 +53,14 @@ set::set(const set &other) {//copy constructor
 
     if (max == 0) {
         max = n = 0;
-        mem = 0;
+        mem.clear();
         return;
     }
 
     max = other.max;
     n = other.n;
-    mem = new int[max];
-    for (int i = 0; i < n; i++)mem[i] = other.mem[i];
+    mem.reserve(max);
+    for (int i = 0; i < n; i++)mem.push_back(other.mem.at(i)) ;
 
 }
 
@@ -78,8 +81,7 @@ void set::destroy() {//destroy a set
 
     if (max == 0)return;  //don't try to destroy empty structures
 
-    delete[] mem;
-    mem = 0;
+    mem.clear();
     max = n = 0;
 
 }
@@ -87,7 +89,7 @@ void set::destroy() {//destroy a set
 void set::setempty() {//mark as empty for mass allocation
 
     max = n = 0;
-    mem = 0;
+    mem.clear();
 
 }
 
@@ -97,8 +99,8 @@ void set::copy(set &other) {//copy another set
     if (other.max == 0)return;
     max = other.max;
     n = other.n;
-    mem = new int[max];
-    for (int i = 0; i < n; i++)mem[i] = other.mem[i];
+    mem.reserve(max);
+    for (int i = 0; i < n; i++)mem.push_back(other.mem.at(i));
 
 }
 
@@ -108,21 +110,14 @@ void set::copyO(set &other, int q) {//copy another set
     if (other.max == 0)return;
     max = other.max;
     n = other.n;
-    mem = new int[max];
+    mem.resize(max);
     for (int i = 0; i < n; i++)mem[i] = other.mem[i] + q;
 
 }
 
 void set::enlarge() {//increment max
-
-    int i;
-    int *nw;
-
-    nw = new int[max + SETINCR];       //create new larger memory
-    for (i = 0; i < n; i++)nw[i] = mem[i];  //transfer data
-    delete[] mem;                 //delete old memory
-    mem = nw;                        //install new memory
     max += SETINCR;                  //record new size
+    mem.reserve(max);
 
 }
 
@@ -136,17 +131,17 @@ int set::add(int z) {//add a member, returns true if a not ALREADY
     if (max == 0) {//empty set, create everything
         max = SETINCR;
         n = 1;
-        mem = new int[max];
-        mem[0] = z;
+        mem.reserve(max);
+        mem.push_back(z);
         return (1);
     } else if (n == 0) {
-        mem[0] = z;
+        mem.push_back(z);
         n = 1;
         return (1);
         //bit of a messy check to cap number elements in multiset
     } else {//existing set, see if the element is new
         int freq = ElementCount(z);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < mem.size(); i++) {
             if (weightedEdges == false || freq == maxWeights) {
                 if (mem[i] == z)return (0);
             }
@@ -154,19 +149,18 @@ int set::add(int z) {//add a member, returns true if a not ALREADY
         if (n == max)enlarge();  //create more space if it is needed
         if (mem[n - 1] < z) {
             //cout << "add end" << endl;
-            mem[n++] = z;
+            mem.push_back(z);
         } else {//ripple insert
             i = 0;
-            while (z > mem[i])i++;
-            for (j = n; j > i; j--)mem[j] = mem[j - 1];
-            mem[i] = z;
+            while (z > mem.at(i))i++;
+            mem.insert(mem.begin()+i, z);
             n++;
         }
     }
     return (1);
 }
 
-int set::remo(int z) {//remove a member, returns true if in there
+int set::remo(const int z) {//remove a member, returns true if in there
 
     int i, j;
 
@@ -174,7 +168,7 @@ int set::remo(int z) {//remove a member, returns true if in there
 
     for (i = 0; i < n; i++)
         if (mem[i] == z) {//found it
-            for (j = i; j < n; j++)mem[j] = mem[j + 1];//ripple delte
+            mem.erase(mem.begin()+i);
             n--;  //reduce set size
             return (1); //report succesful deletion
         }
@@ -184,7 +178,7 @@ int set::remo(int z) {//remove a member, returns true if in there
 }
 
 void set::clear() {//clear the set of members
-
+    mem.clear();
     n = 0;  //max the set empty
 
 }
@@ -201,8 +195,8 @@ int set::size() {//what is the size of the set
 int set::ElementCount(int z) {
     int i;
     int rslt = 0;
-    for (i = 0; i < n; i++) {
-        if (mem[i] == z) rslt++;
+    for (i = 0; i < mem.size(); i++) {
+        if (mem.at(i) == z) rslt++;
     }
     return rslt;
 }
@@ -212,8 +206,8 @@ int set::memb(int z) {//is z a member? 0=no 1=yes
     int i;
 
     for (i = 0; i < n; i++) {
-        if (mem[i] == z)return (1);
-        if (mem[i] > z)return (0);
+        if (mem.at(i) == z)return (1);
+        if (mem.at(i) > z)return (0);
     }
     return (0);
 
@@ -223,7 +217,7 @@ int set::memz(int z) {//zth member
 
     if ((z < 0) || (z >= n))return (0);  //crock failsafe
 
-    return (mem[z]);
+    return (mem.at(z));
 
 }
 
@@ -330,8 +324,8 @@ void set::writememb(ostream &aus) { //write members on one line
         return; //nothing to write
     }
 
-    aus << mem[0];
-    for (int i = 1; i < n; i++)aus << " " << mem[i];
+    aus << mem.at(0);
+    for (int i = 1; i < mem.size(); i++)aus << " " << mem.at(i);
     aus << endl;
 
 }
@@ -361,10 +355,11 @@ void set::read(istream &inp) {//read set
     while (buf[k] != ' ')k++;
     while (buf[k] == ' ')k++;
     max = atoi(buf + k);
-    mem = new int[max];
+    mem.reserve(max);
     for (k = 0; k < n; k++) {
         inp.getline(buf, 59);
-        mem[k] = atoi(buf);
+        mem.insert(mem.begin()+k, atoi(buf));
+//        mem[k] = atoi(buf);
     }
 }
 
@@ -382,8 +377,8 @@ void set::readmemb(istream &inp) {//read members on one line
         for (k = 0; k < l; k++)if (buf[k] == ' ')n++;
         n++;
         max = n;
-        mem = new int[max];
-        mem[0] = atoi(buf);
+        mem.reserve(max);
+        mem.insert(mem.begin(),atoi(buf) ) ;
         k = 0;
         l = 1;
         while (l < n) {
@@ -409,6 +404,8 @@ graph::graph() {//initialize an empty structure
         weights[i] = 0;
     }  //zero out weights,quals
     toggle_add = false;
+    add_many = true;
+    del_many = true;
 }
 
 graph::graph(int max) {//initialize to maximum of M vertices
@@ -963,26 +960,40 @@ void graph::PCG(int n, int m, double prob) {
                         } while (edgeP(nn, dx[i]) && neigh.size() > 0);
 
                         if (!edgeP(nn, dx[i])) { //add edge that creates triangle
-                            for (int x = 0; x < startingWeights; x++) {
+                            while(nbr[nn].ElementCount( dx[i]) < startingWeights){
+                                add_many = false;
                                 add(nn, dx[i]);
                                 temp.add(i); //add vertex to temp
                                 temp.add(ix[nn]); //add new edge to temp
                             }
+//                            for (int x = 0; x < startingWeights; x++) {
+//                                add(nn, dx[i]);
+//                                temp.add(i); //add vertex to temp
+//                                temp.add(ix[nn]); //add new edge to temp
+//                            }
 
                         }
                     }
                 }
-                for (int x = 0; x < startingWeights; x++) {
+                while(nbr[dx[i]].ElementCount(dx[target]) < startingWeights){
+                    add_many = false;
                     add(dx[i], dx[target]); //add an edge to target
                     temp.add(target); //add target to temp
                     temp.add(i); //add new vertex to temp
                 }
+
+//                for (int x = 0; x < startingWeights; x++) {
+//                    add(dx[i], dx[target]); //add an edge to target
+//                    temp.add(target); //add target to temp
+//                    temp.add(i); //add new vertex to temp
+//                }
 
             }
         }
         for (j = 0; j < temp.size(); j++)
             p.push_back(temp.memz(j)); //add new vertices to prob vector
     }
+    add_many = true;
 }
 
 void graph::ER(int n, double p) {//Erdo-Renyi graph with n vertices; prob p
@@ -1069,9 +1080,22 @@ void graph::add(int a, int b) {//force an edge to add
     int num_edges = nbr[a].ElementCount(b);
     if (weightedEdges == true) {
         if (num_edges < maxWeights) {
-            u = nbr[a].add(b);
-            v = nbr[b].add(a);
-            E++;
+            if(add_many){
+                while (num_edges < maxWeights){
+                    u = nbr[a].add(b);
+                    v = nbr[b].add(a);
+                    E++;
+                    num_edges = nbr[a].ElementCount(b);
+                }
+                add_many = false;
+            } else {
+                u = nbr[a].add(b);
+                v = nbr[b].add(a);
+                E++;
+                add_many = true;
+            }
+
+
         }
     } else if (nbr[a].memb(b) == 0)orig_toggle(a, b);
 
@@ -1119,9 +1143,20 @@ void graph::del(int a, int b) {//force an edge to be gone
     if ((b < 0) || (b >= V))b = ((b % V) + V) % V;  //failsafe vertex identity b
     if (a == b)return;  //enforce simplicity
     if (nbr[a].memb(b) == 1) {
-        u = nbr[a].remo(b);
-        v = nbr[b].remo(a);
-        E--;
+        if (del_many) {
+            while(nbr[a].memb(b) == 1){
+                u = nbr[a].remo(b);
+                v = nbr[b].remo(a);
+                E--;
+            }
+            del_many = false;
+        } else{
+            u = nbr[a].remo(b);
+            v = nbr[b].remo(a);
+            E--;
+            del_many = true;
+        }
+
     }
 
 }
@@ -1246,7 +1281,6 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
     if (num_edges <= 0 || (toggle_add == true && num_edges < maxWeights)) {
         if (num_edges > 0) {
             toggle_add = false;
-//          cout << "SWITCHing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
         }
         x1 = nbr[v].add(nb2);
         x2 = nbr[nb2].add(v);
@@ -1254,7 +1288,6 @@ void graph::loggle(int v, int n1, int n2) {//hop an edge
         E++;
     } else {
         if (num_edges < maxWeights) { toggle_add = true; }
-//      cout << "REMOVING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "  << endl;
         x1 = nbr[v].remo(nb2);
         x2 = nbr[nb2].remo(v);
         E--;

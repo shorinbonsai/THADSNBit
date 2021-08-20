@@ -39,14 +39,14 @@ namespace filesystem = ghc::filesystem;
 
 /*************************algorithm controls******************************/
 #define PL 16
-#define NSE 5
+#define NSE 50
 #define alpha 0.3
 #define mepl 3              //  Minimum epidemic length
 #define rse 5               //  Re-try short epidemics
 //#define ftl 50              //  Final test length
 #define verbose true
-#define runs 1
-#define mevs 250
+#define runs 30
+#define mevs 350000
 #define RIs 100
 #define RE ((long)mevs/RIs)
 #define NmC (long)9
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
      */
 
     mode = 0;   //  0 - Epidemic Length, 1 - Profile Matching
-    ringG = false;
+    ringG = true;
     /*
      * Mode 0 -> Epidemic Length (w Densities)
      * Mode 1 -> Profile Matching (w Densities)
@@ -164,6 +164,7 @@ int main(int argc, char *argv[]) {
         iG.RNGnm(verts, 2);
         double fit = initFitness();
         iGOut << "Initial Graph Fitness: " << fit << endl;
+        iG.write(iGOut);
         iGOut.close();
     }
     if (verbose) {
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]) {
         report(stat); //report the statistics of the initial population
         int mateInterval = mevs / 10;
         patient0out << "########################" << endl;
-        patient0out << "Run # " << run+1 << endl;
+        patient0out << "Run # " << run << endl;
         patient0out << "########################" << endl;
         for (int mev = 0; mev < mevs; mev++) {//do mating events
             if (mev % mateInterval == 0) {
@@ -491,11 +492,13 @@ void express(graph &G, const int *cmd) {//express a command string
             case 2://Add
                 a = block % verts;
                 b = (block / verts) % verts; //get vertex numbers
+//                c = (block / verts / verts) % 2;
                 G.add(a, b);       //add edge {a,b}
                 break;
             case 3://Delete
                 a = block % verts;
                 b = (block / verts) % verts; //get vertex numbers
+//                c = (block / verts / verts) % 2;
                 G.del(a, b);       //delete edge a,b
                 break;
             case 4://Swap

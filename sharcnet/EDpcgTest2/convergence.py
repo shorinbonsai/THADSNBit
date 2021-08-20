@@ -31,6 +31,8 @@ def get_fits(dir_path: str):
             RI.append(int(spl[0]))
             fit.append(float(spl[-1]))
             means.append(float(spl[1]))
+            print(spl[1])
+            raise ValueError("ValueError exception thrown")
     return RI, fit, means
 
 def main():

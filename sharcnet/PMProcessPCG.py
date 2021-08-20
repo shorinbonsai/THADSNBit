@@ -13,7 +13,7 @@ import numpy as np
 
 wordCheck = "-fitness\n"
 finame = "best.lint"
-outp = "./Output/PMpcgTest/"
+outp = "./Output/PMpcgTest2/"
 # os.mkdir(outp)
 samps = 30
 lower_better = True
@@ -112,7 +112,7 @@ def main():
                 direc = os.path.join(dirpath, file_name)
                 exper = []
                 exper = dirpath.split('/')
-                if exper[-4][-1] =='t' and exper[-4][0] == 'P':
+                if exper[-4][-1] =='2' and exper[-4][0] == 'P':
                     if exper[-3][0] == '3':
                         alp = 0
                     if exper[-3][0] == '4':
@@ -146,6 +146,10 @@ def main():
                     direc2 = os.path.join(dirpath, initfile)
                     init_data[pr].append(float(init_fit(direc2)))
 
+                    # print(init_data)
+                    # print(direc)
+                    # raise ValueError("ValueError exception thrown")
+
                     # print(data2)
 
 #Profiles
@@ -172,6 +176,10 @@ def main():
     out.write("95%CI".ljust(col_width))
     out.write("Best".ljust(col_width))
     out.write('\n')
+
+    # print(data)
+    # raise ValueError("ValueError exception thrown")
+
     for pridx, pr_dat in enumerate(data):
         col_idx = 1
         pr_info ="P" + str(profiles[pridx]).ljust(col_ws[col_idx])
@@ -181,10 +189,14 @@ def main():
             if len(dat) < 30:
                 print(pr_info + str(densities[psidx]))
                 print(len(dat))
-                   
+                print(dat)
+            if len(dat) > 30:
+                print(pr_info + str(densities[psidx]))
+                print(len(dat))
+                print(dat)
+       
             assert len(dat) == samps
 
-            print(all_info)
             data_1d.append(dat)
             out.write(str("EXP" + str(exp)).ljust(col_ws[0]))
             out.write(all_info)
