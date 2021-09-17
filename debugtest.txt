@@ -1,0 +1,14 @@
+==8416== Memcheck, a memory error detector
+==8416== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==8416== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==8416== Command: ./PMpcgTest2ex ./tmptmp ./Profiles/Profile3.dat 3 0.0108426 0.00719539 0.00304208 0.0616601 0.435922 0.000951899 0.0129165 0.0223255 0.445143
+==8416== Parent PID: 707
+==8416== 
+==8416== 
+==8416== HEAP SUMMARY:
+==8416==     in use at exit: 0 bytes in 0 blocks
+==8416==   total heap usage: 24,786,094 allocs, 24,786,094 frees, 5,656,230,020 bytes allocated
+==8416== 
+==8416== All heap blocks were freed -- no leaks are possible
+==8416== 
+==8416== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

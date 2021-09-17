@@ -150,6 +150,7 @@ int set::add(int z) {//add a member, returns true if a not ALREADY
         if (mem[n - 1] < z) {
             //cout << "add end" << endl;
             mem.push_back(z);
+            n++;  //was missing prior, possible compromised data?
         } else {//ripple insert
             i = 0;
             while (z > mem.at(i))i++;

@@ -1,3 +1,5 @@
+import numpy as np
+import matplotlib.pyplot as plt
 import sys
 import os
 import csv
@@ -8,12 +10,10 @@ from operator import itemgetter
 
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
 
 wordCheck = "-fitness\n"
 finame = "best.lint"
-outp = "../Output/EDpcgTest2/"
+outp = "../Output/EDedgeops/"
 # os.mkdir(outp)
 samps = 30
 lower_better = False
@@ -36,6 +36,7 @@ def getFits(dir_path: str, ascending: bool):
         pass
     return data
 
+
 def init_fit(dir_path: str):
     with open(dir_path) as f:
         lines = f.readlines()
@@ -43,7 +44,6 @@ def init_fit(dir_path: str):
         first = line.split(' ')
         result = first[-1]
         return result
-
 
 
 def writeStat(data: [], out):
@@ -66,7 +66,9 @@ def writeStat(data: [], out):
     out.write(str(maxima).ljust(col_width))
     return mean, maxima
 
-#ED
+# ED
+
+
 def toFile(data: [], fname: string, exp: int, stats: [], inf: str):
     out = open(outp + fname + str(exp) + ".dat", "w")
     out.write(inf + '\n')
@@ -78,7 +80,7 @@ def toFile(data: [], fname: string, exp: int, stats: [], inf: str):
     out.close()
     pass
 
-#Profiles
+# Profiles
 # def toFile(data: [], fname: string, exp: int):
 #     out = open(outp + fname + str(exp) + ".dat", "w")
 #     for d in data:
@@ -92,16 +94,18 @@ def main():
     alphas = [30, 40]
     edges = [1, 3, 5]
     # densities = ["ps1","ps2","ps3","ps4","ps5","ps6","ps7","ps8"]
-    densities = ["ps1","ps2","ps3","ps4","ps5","ps6","ps7","ps8","ps9","ps10","ps11","ps12","ps13","ps14","ps15","ps16","ps17","ps18","ps19","ps20","ps21","ps22","ps23","ps24","ps25","ps26","ps27","ps28","ps29"]
+    densities = ["ps1", "ps2", "ps3", "ps4", "ps5", "ps6", "ps7", "ps8", "ps9", "ps10", "ps11", "ps12", "ps13", "ps14",
+                 "ps15", "ps16", "ps17", "ps18", "ps19", "ps20", "ps21", "ps22", "ps23", "ps24", "ps25", "ps26", "ps27", "ps28", "ps29"]
     profiles = ["pr1", "pr2", "pr3", "pr4", "pr5", "pr6", "pr7", "pr8", "pr9"]
     initfile = "initGraph.dat"
 
     data = [[] for _ in range(len(densities))]
     print(data)
-    data2 = [[[[[] for _ in range(8)] for _ in range(len(edges))] for _ in range(9)] for _ in range(len(alphas))]
+    data2 = [[[[[] for _ in range(8)] for _ in range(len(edges))]
+              for _ in range(9)] for _ in range(len(alphas))]
     init_data = []
-    
-    #ED
+
+    # ED
     # for dirpath, dirnames, files in os.walk('.'):
     #     for file_name in files:
     #         if file_name.endswith(".lint"):
@@ -122,9 +126,9 @@ def main():
     #                     edg = 2
     #                 ps = int(exper[-2][-1])-1
     #                 data[alp][edg][ps] = getFits(direc, lower_better)
-                        # print(data)
-                        # print(direc)
-                        # raise ValueError("ValueError exception thrown")
+    # print(data)
+    # print(direc)
+    # raise ValueError("ValueError exception thrown")
     for dirpath, dirnames, files in os.walk('.'):
         for file_name in files:
             if file_name.endswith(".lint"):
@@ -175,9 +179,9 @@ def main():
     #                     pr = 8
     #                 ps = int(exper[-2][-1])-1
     #                 data2[alp][pr][edg][ps] = getFits(direc, lower_better)
-                    # print(data2)
+                # print(data2)
 
-#Profiles
+# Profiles
     # col_ws = [6, 5, 6, 4, 5]
     # means = []
     # bests = []
@@ -208,8 +212,6 @@ def main():
     #                 if len(dat) < 30:
     #                     print(pr_info + str(densities[psidx]))
 
-                    
-
     #                 assert len(dat) == samps
     #                 data_1d.append(dat)
     #                 all_info = pr_info + str(densities[psidx]).ljust(col_ws[col_idx])
@@ -228,7 +230,7 @@ def main():
     # out.close()
 
 
-#ED
+# ED
     # col_ws = [6, 5, 6, 4]
     # means = []
     # bests = []
@@ -289,7 +291,7 @@ def main():
         out.write(str("EXP" + str(exp)).ljust(col_ws[0]))
         out.write(all_info)
         if len(dat) < 30:
-            print(str(densities[psidx]) + str(len(dat))+ "   "+ str(dat))
+            print(str(densities[psidx]) + str(len(dat)) + "   " + str(dat))
         assert len(dat) == samps
         data_1d.append(dat)
         vals = writeStat(dat, out)
@@ -307,18 +309,18 @@ def main():
     if not lower_better:
         means.reverse()
         bests.reverse()
-                    
+
     out = open(outp + "EDpcgbesttest.dat", "w")
     # for idx in range(len(profs)):
     # out.write("Profile " + str(profs[idx]) + "\n")
     out.write("Top 8 Best Mean: " + "\n")
     for i in range(8):
-        out.write("Mean  " + str(means[i][0]) )
+        out.write("Mean  " + str(means[i][0]))
         print("testing" + str(means[i][1][0]))
         out.write("   PS: " + str(densities[means[i][1][0]]) + "\n")
     out.write("Top 8 Best Fitness: " + "\n")
     for i in range(8):
-        out.write("Fitness  " + str(bests[i][0]) )
+        out.write("Fitness  " + str(bests[i][0]))
         out.write("   PS: " + str(densities[bests[i][1][0]]) + "\n")
     out.write("\n")
     out.close()
@@ -350,10 +352,9 @@ def main():
     f.suptitle("ED PCG Densities test", fontsize=10)
     plot.set_xlabel("Parameter Setting (PS=densities)", fontsize=8)
     plot.set_ylabel("Distribution of Fitness", fontsize=8)
-    f.subplots_adjust(left=.08, bottom=.1, right=.98, top=.91, wspace=0, hspace=0)
+    f.subplots_adjust(left=.08, bottom=.1, right=.98,
+                      top=.91, wspace=0, hspace=0)
     f.savefig(fig_root + ".png")
-
-
 
     # fig_root = outp + "boxplotEDpcg"
     # plt.rc('xtick', labelsize=4)
@@ -372,6 +373,6 @@ def main():
     # f.savefig(fig_root + "40.png")
     # return 0
 
-        
+
 if '__main__' == __name__:
     main()

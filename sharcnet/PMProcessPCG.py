@@ -1,3 +1,5 @@
+import numpy as np
+import matplotlib.pyplot as plt
 import sys
 import os
 import csv
@@ -8,12 +10,10 @@ from operator import itemgetter
 
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
 
 wordCheck = "-fitness\n"
 finame = "best.lint"
-outp = "./Output/PMpcgTest2/"
+outp = "./Output/PMedgeop/"
 # os.mkdir(outp)
 samps = 30
 lower_better = True
@@ -35,6 +35,7 @@ def getFits(dir_path: str, ascending: bool):
         data.reverse()
         pass
     return data
+
 
 def init_fit(dir_path: str):
     with open(dir_path) as f:
@@ -65,7 +66,9 @@ def writeStat(data: [], out):
     out.write(str(maxima).ljust(col_width))
     return mean, maxima
 
-#ED
+# ED
+
+
 def toFile(data: [], fname: string, exp: int, stats: [], inf: str):
     out = open(outp + fname + str(exp) + ".dat", "w")
     out.write(inf + '\n')
@@ -77,7 +80,7 @@ def toFile(data: [], fname: string, exp: int, stats: [], inf: str):
     out.close()
     pass
 
-#Profiles
+# Profiles
 # def toFile(data: [], fname: string, exp: int):
 #     out = open(outp + fname + str(exp) + ".dat", "w")
 #     for d in data:
@@ -90,9 +93,9 @@ def toFile(data: [], fname: string, exp: int, stats: [], inf: str):
 def main():
     alphas = [30]
     edges = [3]
-    # densities = ["ps1","ps2","ps3","ps4","ps5","ps6","ps7","ps8"]
-    densities = ["ps1","ps2","ps3","ps4","ps5","ps6","ps7","ps8","ps9","ps10","ps11","ps12","ps13","ps14","ps15","ps16","ps17","ps18","ps19","ps20","ps21","ps22","ps23","ps24","ps25","ps26","ps27","ps28","ps29"]
-    profiles = [1,2,3,4,5,6,7,8,9]
+    densities = ["ps1", "ps2", "ps3", "ps4", "ps5", "ps6", "ps7", "ps8"]
+    # densities = ["ps1","ps2","ps3","ps4","ps5","ps6","ps7","ps8","ps9","ps10","ps11","ps12","ps13","ps14","ps15","ps16","ps17","ps18","ps19","ps20","ps21","ps22","ps23","ps24","ps25","ps26","ps27","ps28","ps29"]
+    profiles = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     data = [[[] for _ in range(len(densities))] for _ in range(len(profiles))]
     init_data = [[] for _ in range(len(profiles))]
@@ -105,54 +108,43 @@ def main():
     #     out_name = tab_root + "P" + str(pr_dat) + ".dat"
     #     tables.append(open(out_name, "w"))
 
-        
     for dirpath, dirnames, files in os.walk('.'):
         for file_name in files:
             if file_name.endswith(".lint"):
                 direc = os.path.join(dirpath, file_name)
                 exper = []
                 exper = dirpath.split('/')
-                if exper[-4][-1] =='2' and exper[-4][0] == 'P':
-                    if exper[-3][0] == '3':
-                        alp = 0
-                    if exper[-3][0] == '4':
-                        alp = 1
-                    if exper[-4][2] == '1':
-                        edg = 0
-                    if exper[-4][2] == '3':
-                        edg = 1
-                    if exper[-4][2] == '5':
-                        edg = 2
-                    if "P1" in exper[-1]:
-                        pr = 0
-                    if "P2" in exper[-1]:
-                        pr = 1
-                    if "P3" in exper[-1]:
-                        pr = 2
-                    if "P4" in exper[-1]:
-                        pr = 3
-                    if "P5" in exper[-1]:
-                        pr = 4
-                    if "P6" in exper[-1]:
-                        pr = 5
-                    if "P7" in exper[-1]:
-                        pr = 6
-                    if "P8" in exper[-1]:
-                        pr = 7
-                    if "P9" in exper[-1]:
-                        pr = 8
-                    ps = int(exper[-2][2:])-1
-                    data[pr][ps] = getFits(direc, lower_better)
-                    direc2 = os.path.join(dirpath, initfile)
-                    init_data[pr].append(float(init_fit(direc2)))
+                # if exper[-4][-1] == 'p' and exper[-4][0] == 'P':
+                if "P1" in exper[-1]:
+                    pr = 0
+                if "P2" in exper[-1]:
+                    pr = 1
+                if "P3" in exper[-1]:
+                    pr = 2
+                if "P4" in exper[-1]:
+                    pr = 3
+                if "P5" in exper[-1]:
+                    pr = 4
+                if "P6" in exper[-1]:
+                    pr = 5
+                if "P7" in exper[-1]:
+                    pr = 6
+                if "P8" in exper[-1]:
+                    pr = 7
+                if "P9" in exper[-1]:
+                    pr = 8
+                ps = int(exper[-2][2:])-1
+                data[pr][ps] = getFits(direc, lower_better)
+                direc2 = os.path.join(dirpath, initfile)
+                init_data[pr].append(float(init_fit(direc2)))
 
-                    # print(init_data)
-                    # print(direc)
-                    # raise ValueError("ValueError exception thrown")
+                # print(init_data)
+                # print(direc)
+                # raise ValueError("ValueError exception thrown")
 
-                    # print(data2)
+                # print(data2)
 
-#Profiles
+# Profiles
     col_ws = [7, 5, 6, 4, 5]
     # means = [[] for _ in range(len(profiles))]
     # bests = [[] for _ in range(len(profiles))]
@@ -164,8 +156,8 @@ def main():
     #     for alidx in range(len(alphas)):
     #         col_idx = 0
     #         tables[pridx].write(base_lbls[bidx].ljust(col_ws[col_idx]))
-    
-    out = open(outp + "PM_pcgTest.dat", "w", encoding='utf-16')
+
+    out = open(outp + "PM_EdgeOp.dat", "w", encoding='utf-16')
     out.write("EXP".ljust(col_ws[0]))
     # out.write("A".ljust(col_ws[1]))
     out.write("Prof".ljust(col_ws[2]))
@@ -182,7 +174,7 @@ def main():
 
     for pridx, pr_dat in enumerate(data):
         col_idx = 1
-        pr_info ="P" + str(profiles[pridx]).ljust(col_ws[col_idx])
+        pr_info = "P" + str(profiles[pridx]).ljust(col_ws[col_idx])
         for psidx, dat in enumerate(pr_dat):
             col_idx = 2
             all_info = pr_info + str(densities[psidx]).ljust(col_ws[col_idx])
@@ -194,7 +186,7 @@ def main():
                 print(pr_info + str(densities[psidx]))
                 print(len(dat))
                 print(dat)
-       
+
             assert len(dat) == samps
 
             data_1d.append(dat)
@@ -223,7 +215,7 @@ def main():
     #                 if len(dat) < 30:
     #                     print(pr_info + str(densities[psidx]))
     #                     print(len(dat))
-                   
+
     #                 assert len(dat) == samps
     #                 raise ValueError("ValueError exception thrown")
     #                 data_1d.append(dat)
@@ -238,13 +230,10 @@ def main():
     #                 means.append([vals[0], [alindx,pridx, edidx, psidx]])
     #                 bests.append([vals[1], [alindx,pridx, edidx, psidx]])
     #                 pass
-                # pass
+            # pass
             # pass
         pass
     out.close()
-
-
-
 
     means.sort(key=itemgetter(0))
     bests.sort(key=itemgetter(0))
@@ -253,17 +242,17 @@ def main():
         means.reverse()
         bests.reverse()
 
-    out = open(outp + "PMpcgbesttest.dat", "w")
+    out = open(outp + "PMedgeOpBest.dat", "w")
     # for idx in range(len(profs)):
     # out.write("Profile " + str(profs[idx]) + "\n")
     out.write("Top 20 Best Mean: " + "\n")
     for i in range(20):
-        out.write("Mean  " + str(means[i][0]) )
+        out.write("Mean  " + str(means[i][0]))
         # print("testing" + str(means[i][1][0]))
         out.write("   PS: " + str(means[i][1][1]+1) + "\n")
     out.write("Top 20 Best Fitness: " + "\n")
     for i in range(20):
-        out.write("Fitness  " + str(bests[i][0]) )
+        out.write("Fitness  " + str(bests[i][0]))
         out.write("   PS: " + str(bests[i][1][1]+1) + "\n")
     out.write("\n")
     # ranking = []
@@ -275,7 +264,6 @@ def main():
     #     out.write("PS: " + ranking[i] + "  Rank: " + str(i+1)+ "\n")
     #     print("PS: " + ranking[i] + "  Rank: " + str(i+1))
     out.close()
-                    
 
     all_data30 = [[] for _ in range(len(profiles))]
     x_labels30 = [[] for _ in range(len(profiles))]
@@ -291,19 +279,19 @@ def main():
     #             all_data40[pridx].append(data2[1][pridx][edidx][psidx])
     #             x_labels40[pridx].append("ps=" + ps + " E=" + str(edg))
 
-    fig_titles = ["Profile 1", "Profile 2", "Profile 3", \
-         "Profile 4", "Profile 5", "Profile 6", "Profile 7", \
-         "Profile 8", "Profile 9"]
+    fig_titles = ["Profile 1", "Profile 2", "Profile 3",
+                  "Profile 4", "Profile 5", "Profile 6", "Profile 7",
+                  "Profile 8", "Profile 9"]
 
-    fig_titles2 = ["Profile 1 - 40alpha PCG", "Profile 2 - 40alpha PCG", "Profile 3 - 40alpha PCG", \
-         "Profile 4 - 40alpha PCG", "Profile 5 - 40alpha PCG", "Profile 6 - 40alpha PCG", "Profile 7 - 40alpha PCG", \
-         "Profile 8 - 40alpha PCG", "Profile 9 - 40alpha PCG"]
+    fig_titles2 = ["Profile 1 - 40alpha PCG", "Profile 2 - 40alpha PCG", "Profile 3 - 40alpha PCG",
+                   "Profile 4 - 40alpha PCG", "Profile 5 - 40alpha PCG", "Profile 6 - 40alpha PCG", "Profile 7 - 40alpha PCG",
+                   "Profile 8 - 40alpha PCG", "Profile 9 - 40alpha PCG"]
 
-    fig_titles3 = ["Profile 1 - PCG", "Profile 2 - PCG", "Profile 3 - PCG", \
-         "Profile 4 - PCG", "Profile 5 - PCG", "Profile 6 - PCG", "Profile 7 - PCG", \
-         "Profile 8 - PCG", "Profile 9 - PCG"]
+    fig_titles3 = ["Profile 1 - PCG", "Profile 2 - PCG", "Profile 3 - PCG",
+                   "Profile 4 - PCG", "Profile 5 - PCG", "Profile 6 - PCG", "Profile 7 - PCG",
+                   "Profile 8 - PCG", "Profile 9 - PCG"]
 
-    fig_root = outp + "boxplot_30Alph_P"
+    fig_root = outp + "boxplot_EdgeOpers_P"
     plt.rc('xtick', labelsize=4)
     plt.rc('ytick', labelsize=6)
     figs = [plt.figure() for _ in range(len(profiles))]
@@ -319,10 +307,12 @@ def main():
         # mean = float(np.mean(init_data[idx]))
         plts[idx].axhline(y=init_data[idx][0], color='r', linestyle='-')
         figs[idx].suptitle(fig_titles[idx], fontsize=12)
-        plts[idx].set_xlabel("Parameter Setting (E=Starting Edges, ps=Density Profiles)", fontsize=10)
+        plts[idx].set_xlabel(
+            "Parameter Setting (E=Starting Edges, ps=Density Profiles)", fontsize=10)
         plts[idx].set_ylabel("PM - Fitness", fontsize=10)
-        
-        figs[idx].subplots_adjust(left=.08, bottom=.1, right=.98, top=.91, wspace=0, hspace=0)
+
+        figs[idx].subplots_adjust(
+            left=.08, bottom=.1, right=.98, top=.91, wspace=0, hspace=0)
         figs[idx].tight_layout()
 
         figs[idx].savefig(fig_root + str(profiles[idx]) + ".png")
@@ -344,7 +334,7 @@ def main():
     #     figs[idx].suptitle(fig_titles2[idx], fontsize=12)
     #     plts[idx].set_xlabel("Parameter Setting (E=Starting Edges, ps=Density Profiles)", fontsize=10)
     #     plts[idx].set_ylabel("PM - Fitness", fontsize=10)
-        
+
     #     figs[idx].subplots_adjust(left=.08, bottom=.1, right=.98, top=.91, wspace=0, hspace=0)
     #     figs[idx].tight_layout()
     #     figs[idx].savefig(fig_root2 + str(profiles[idx]) + ".png")
@@ -374,8 +364,6 @@ def main():
     # f.subplots_adjust(left=.08, bottom=.1, right=.98, top=.91, wspace=0, hspace=0)
     # f.savefig(fig_root + "30.png")
 
-
-
     # fig_root = outp + "boxplotEDpcg"
     # plt.rc('xtick', labelsize=4)
     # plt.rc('ytick', labelsize=6)
@@ -393,6 +381,6 @@ def main():
     # f.savefig(fig_root + "40.png")
     return 0
 
-        
+
 if '__main__' == __name__:
     main()
