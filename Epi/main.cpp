@@ -43,12 +43,12 @@ namespace filesystem = ghc::filesystem;
 //#define ftl 50              //  Final test length
 #define verbose true
 #define runs 30
-#define mevs 350000
+#define mevs 60000 
 #define RIs 100
 #define RE ((long)mevs / RIs)
 #define NmC (long)9
 #define EDGB 2 //  Minimum degree for swap
-#define popsize 100
+#define popsize 1000
 #define verts 128
 #define GL 256
 #define RNS 91207819
