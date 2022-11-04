@@ -43,13 +43,13 @@ namespace filesystem = ghc::filesystem;
 //#define ftl 50              //  Final test length
 #define verbose true
 #define runs 30
-#define mevs 60000
+#define mevs 40000
 #define RIs 100
 #define RE ((long)mevs / RIs)
 #define NmC (long)9
 #define EDGB 2 //  Minimum degree for swap
 #define popsize 1000
-#define verts 128
+#define verts 512
 #define GL 256
 #define RNS 91207819
 #define MAXL (long)pow(verts, 3) //  Size of integer
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
         initpop();
         stat << left << setw(4) << 0;
         report(stat); // report the statistics of the initial population
-        int mateInterval = mevs / 10;
+        int mateInterval = mevs / 2;
         patient0out << "########################" << endl;
         patient0out << "Run # " << run << endl;
         patient0out << "########################" << endl;
@@ -619,12 +619,12 @@ bool necroticFilter()
 
 double initFitness()
 {
-    int max, len, ttl;  // maximum, length, and total removed
-    int cnt;            // counter for tries
-    double prof[verts]; // profile variable
-    double trials[NSE]; // stores squared error for each trial
-    double delta;       // difference between profile and trial
-    double accu = 0.0;  // accumulator
+    int max, len, ttl;       // maximum, length, and total removed
+    int cnt;                 // counter for tries
+    double prof[verts + 10]; // profile variable
+    double trials[NSE];      // stores squared error for each trial
+    double delta;            // difference between profile and trial
+    double accu = 0.0;       // accumulator
     int en;
     if (mode == 0)
     {
@@ -652,7 +652,7 @@ double initFitness()
             do
             {
                 // iG.SIRProfile(patient0, max, len, ttl, alpha, prof);
-                iG.SIRSProfile(patient0, max, len, ttl, alpha, prof);
+                iG.SIRRSProfile(patient0, max, len, ttl, alpha, prof);
                 cnt++;
             } while (len < mepl && cnt < rse);
             trials[en] = 0; // zero the current squared error
@@ -660,10 +660,21 @@ double initFitness()
             {
                 len = PL + 1; // find length of epi/prof (longer)
             }
+            // small window
+            // len = PL + 1;
+            // comment out above for full error
             for (int i = 0; i < len; i++)
             { // loop over time periods
-                delta = prof[i] - PD[i];
-                trials[en] += delta * delta;
+                if (i < PL + 1)
+                {
+                    delta = prof[i] - PD[i];
+                    trials[en] += delta * delta;
+                }
+                else
+                {
+                    delta = prof[i];
+                    trials[en] += delta * delta;
+                }
             }
             trials[en] = sqrt(trials[en] / len); // convert to RMS error
         }
@@ -678,16 +689,16 @@ double initFitness()
 }
 
 double fitness(int *cmd)
-{                       // compute the epidemic length fitness
-    graph G(verts);     // scratch graph
-    int max, len, ttl;  // maximum, length, and total removed
-    int cnt;            // counter for tries
-    double prof[verts]; // profile variable
-    double trials[NSE]; // stores squared error for each trial
-    int en;             // epidemic number
-    double delta;       // difference between profile and trial
-    double accu = 0.0;  // accumulator
-    express(G, cmd);    // create the graph
+{                            // compute the epidemic length fitness
+    graph G(verts);          // scratch graph
+    int max, len, ttl;       // maximum, length, and total removed
+    int cnt;                 // counter for tries
+    double prof[verts + 10]; // profile variable
+    double trials[NSE];      // stores squared error for each trial
+    int en;                  // epidemic number
+    double delta;            // difference between profile and trial
+    double accu = 0.0;       // accumulator
+    express(G, cmd);         // create the graph
 
     if (mode == 0)
     {
@@ -715,7 +726,7 @@ double fitness(int *cmd)
             do
             {
                 // G.SIRProfile(patient0, max, len, ttl, alpha, prof);
-                G.SIRSProfile(patient0, max, len, ttl, alpha, prof);
+                G.SIRRSProfile(patient0, max, len, ttl, alpha, prof);
                 cnt++;
             } while (len < mepl && cnt < rse);
             trials[en] = 0; // zero the current squared error
@@ -723,10 +734,21 @@ double fitness(int *cmd)
             {
                 len = PL + 1; // find length of epi/prof (longer)
             }
+            // small window
+            // len = PL + 1;
+            // comment out above for full error
             for (int i = 0; i < len; i++)
             { // loop over time periods
-                delta = prof[i] - PD[i];
-                trials[en] += delta * delta;
+                if (i <= PL + 1)
+                {
+                    delta = prof[i] - PD[i];
+                    trials[en] += delta * delta;
+                }
+                else
+                {
+                    delta = prof[i];
+                    trials[en] += delta * delta;
+                }
             }
             trials[en] = sqrt(trials[en] / len); // convert to RMS error
         }
@@ -737,6 +759,7 @@ double fitness(int *cmd)
         }
         accu = accu / NSE;
     }
+    // delete[] prof;
     return accu; // return the fitness value
 }
 

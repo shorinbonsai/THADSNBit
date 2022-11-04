@@ -192,9 +192,10 @@ public:
   void SIR(int p0, int &max, int &len, int &ttl, double alpha); // SIR method
   void SIRProfile(int p0, int &max, int &len, int &ttl, double alpha,
                   double *prof); // Sir Method, with profile
-
+  void SIRRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
+                    double *prof); // Sirrs Method, with profile
   void SIRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
-                   double *prof); // Sir Method, with profile
+                   double *prof); // Sirs Method, with profile
   /*SIRr is the same as SIR except that patient zero is assigned at random*/
   void SIRr(int &max, int &len, int &ttl, double alpha); // SIR method
 

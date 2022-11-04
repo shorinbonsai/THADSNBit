@@ -2157,6 +2157,83 @@ void graph::SIR(int p0, int &max, int &len, int &ttl, double alpha)
 }
 
 // This is a modification of the SIRProfile routine that adds a susceptible state
+void graph::SIRRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
+                         double *prof)
+{ // Sir Method, with profile
+
+    int NI;      // number of infected individuals
+    int i, j, k; // loop index variables
+    int *nin;    // number of infected neighbors
+
+    max = len = ttl = 0; // zero the reporting statistics
+    if ((V == 0) || (p0 >= V))
+        return; // no one was infected...
+                //     if ((V == 0) || (p0 > 0) || (p0 >= V))return; //no one was infected...
+
+    for (i = 0; i < V; i++)
+        prof[i] = 0; // zero the profile array
+
+    nin = new int[V]; // create infected neioghbor counters
+    setC2(0);         // set the population to infected
+    clr[p0] = 1;      // infect patient zero
+    NI = 1;           // initialize to one person currently infected
+    len = 0;          // initialize length variable
+    prof[len] = 1.0;  // record patient zero
+
+    while (NI > 0)
+    { // while there is still an epidemic
+        // cout << "LEN=" << len << " NI=" << NI << endl;
+        for (i = 0; i < V; i++)
+            nin[i] = 0; // zero the number of infected neighbors buffer
+        for (i = 0; i < V; i++)
+            if (clr[i] == 1)
+            { // found infected individual
+                for (j = 0; j < nbr[i].size(); j++)
+                    nin[nbr[i].memz(j)]++; // record exposure
+            }
+        // check for transmission
+        for (i = 0; i < V; i++)
+            if ((clr[i] == 0) && (nin[i] > 0))
+            {
+                clr[i] = 3 * infected(nin[i], alpha);
+            }
+        if (NI > max)
+            max = NI; // check for updated maximum
+        ttl += NI;    // add the infected to the total
+        NI = 0;       // zero the number infected counter
+        for (i = 0; i < V; i++)
+            switch (clr[i])
+            {       // status update
+            case 0: // susceptible, do nothing
+                break;
+            case 1: // infected, move to removed
+                clr[i] = 2;
+                break;
+            case 2: // removed, add to second removed state
+                clr[i] = 4;
+                break;
+            case 3: // newly infected
+                clr[i] = 1;
+                NI++;
+                prof[len + 1] += 1.0; // record the infection
+                break;
+            case 4: // second removed state, make susceptible
+                clr[i] = 5;
+                break;
+            case 5:
+                clr[i] = 0;
+                break;
+            }
+        len++; // record the time step
+        if (len >= V)
+        {
+            NI = 0;
+            break;
+        }
+    }
+    delete[] nin; // return storage for nin buffer
+}
+// This is a modification of the SIRProfile routine that adds a susceptible state
 void graph::SIRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
                         double *prof)
 { // Sir Method, with profile
@@ -2194,7 +2271,9 @@ void graph::SIRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
         // check for transmission
         for (i = 0; i < V; i++)
             if ((clr[i] == 0) && (nin[i] > 0))
+            {
                 clr[i] = 3 * infected(nin[i], alpha);
+            }
         if (NI > max)
             max = NI; // check for updated maximum
         ttl += NI;    // add the infected to the total
@@ -2207,8 +2286,9 @@ void graph::SIRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
             case 1: // infected, move to removed
                 clr[i] = 2;
                 break;
-            case 2: // removed, mark susceptible
+            case 2: // removed, make susceptible
                 clr[i] = 0;
+                break;
             case 3: // newly infected
                 clr[i] = 1;
                 NI++;
@@ -2216,6 +2296,11 @@ void graph::SIRSProfile(int p0, int &max, int &len, int &ttl, double alpha,
                 break;
             }
         len++; // record the time step
+        if (len >= V)
+        {
+            NI = 0;
+            break;
+        }
     }
     delete[] nin; // return storage for nin buffer
 }
