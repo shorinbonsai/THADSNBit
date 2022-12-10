@@ -10,8 +10,8 @@
 
 using namespace std;
 
-//#include "filesystem.hpp"
-// namespace filesystem = ghc::filesystem;
+// #include "filesystem.hpp"
+//  namespace filesystem = ghc::filesystem;
 
 ///***********filesystem c++11 version************/
 #if defined(__cplusplus) && __cplusplus >= 201703L && defined(__has_include)
@@ -40,7 +40,7 @@ namespace filesystem = ghc::filesystem;
 #define alpha 0.3
 #define mepl 3 //  Minimum epidemic length
 #define rse 5  //  Re-try short epidemics
-//#define ftl 50              //  Final test length
+// #define ftl 50              //  Final test length
 #define verbose true
 #define runs 30
 #define mevs 40000
@@ -651,8 +651,8 @@ double initFitness()
             cnt = 0;
             do
             {
-                // iG.SIRProfile(patient0, max, len, ttl, alpha, prof);
-                iG.SIRRSProfile(patient0, max, len, ttl, alpha, prof);
+                iG.SIRProfile(patient0, max, len, ttl, alpha, prof);
+                // iG.SIRRSProfile(patient0, max, len, ttl, alpha, prof);
                 cnt++;
             } while (len < mepl && cnt < rse);
             trials[en] = 0; // zero the current squared error
@@ -661,7 +661,7 @@ double initFitness()
                 len = PL + 1; // find length of epi/prof (longer)
             }
             // small window
-            // len = PL + 1;
+            len = PL + 1;
             // comment out above for full error
             for (int i = 0; i < len; i++)
             { // loop over time periods
@@ -725,7 +725,7 @@ double fitness(int *cmd)
             cnt = 0;
             do
             {
-                // G.SIRProfile(patient0, max, len, ttl, alpha, prof);
+                G.SIRProfile(patient0, max, len, ttl, alpha, prof);
                 G.SIRRSProfile(patient0, max, len, ttl, alpha, prof);
                 cnt++;
             } while (len < mepl && cnt < rse);
@@ -735,7 +735,7 @@ double fitness(int *cmd)
                 len = PL + 1; // find length of epi/prof (longer)
             }
             // small window
-            // len = PL + 1;
+            len = PL + 1;
             // comment out above for full error
             for (int i = 0; i < len; i++)
             { // loop over time periods
