@@ -725,7 +725,7 @@ double fitness(int *cmd)
             cnt = 0;
             do
             {
-                G.SIRProfile(patient0, max, len, ttl, alpha, prof);
+                // G.SIRProfile(patient0, max, len, ttl, alpha, prof);
                 G.SIRRSProfile(patient0, max, len, ttl, alpha, prof);
                 cnt++;
             } while (len < mepl && cnt < rse);
